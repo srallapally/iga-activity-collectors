@@ -22,8 +22,11 @@ Exit codes:
 
 from __future__ import annotations
 
+import argparse
 import logging
+import os
 import sys
+from pathlib import Path
 
 from iga_collectors.config import (
     ConfigError,
@@ -41,6 +44,34 @@ def main() -> int:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+
+    parser = argparse.ArgumentParser(
+        prog="iga-collectors",
+        description="Discover and run IGA activity collectors.",
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List discovered collectors in COLLECTORS_DIR and exit.",
+    )
+    args = parser.parse_args()
+
+    if args.list:
+        collectors_dir_str = os.environ.get("COLLECTORS_DIR")
+        if not collectors_dir_str:
+            logger.error("COLLECTORS_DIR is not set")
+            return 1
+        try:
+            files = discover_collector_files(Path(collectors_dir_str))
+        except NotADirectoryError as exc:
+            logger.error("%s", exc)
+            return 1
+        if not files:
+            print("No collectors found in", collectors_dir_str)
+        else:
+            for p in files:
+                print(p.stem)
+        return 0
 
     try:
         config = load_config()

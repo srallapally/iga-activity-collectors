@@ -54,14 +54,6 @@ examples/              reference collectors (not auto-discovered from here)
 tests/                 unit tests + fixtures, including a fake COLLECTORS_DIR
 ```
 
-## PyCharm setup
-
-1. Open this folder as a PyCharm project.
-2. Mark `src` as **Sources Root** (right-click → Mark Directory as).
-3. Mark `tests` as **Test Sources Root**.
-4. Set the project interpreter to a venv with `pip install -e ".[dev]"`.
-5. Set the default test runner to pytest (Settings → Tools → Python Integrated Tools).
-
 ## Configuration
 
 Copy `.env.example` to `.env` and fill in real values before running any
