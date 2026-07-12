@@ -173,3 +173,13 @@ class ActivityUploader:
             "upload accepted status=%s events=%d", response.status_code, len(events)
         )
         return response
+
+
+class DryRunUploader:
+    """Drop-in replacement for ActivityUploader used by --dry-run.
+    Prints each event as pretty-printed JSON to stdout. Makes no HTTP
+    calls — no IGA credentials required."""
+
+    def upload(self, events: list[dict[str, Any]]) -> None:
+        for event in events:
+            print(json.dumps(event, indent=2))
