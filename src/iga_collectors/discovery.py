@@ -49,13 +49,14 @@ or restrict them.
 from __future__ import annotations
 
 import importlib.util
+import itertools
 import json
 import logging
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Optional
 
 from iga_collectors.base import BaseCollector
 from iga_collectors.uploader import ActivityUploader
@@ -205,14 +206,19 @@ def _batched(
 
 def run_and_upload(
     collector: BaseCollector,
-    uploader: ActivityUploader,
+    uploader: Any,
     batch_size: int = DEFAULT_BATCH_SIZE,
+    limit: Optional[int] = None,
 ) -> int:
-    """Run one collector to completion, uploading its events in batches.
+    """Run one collector, uploading its events in batches.
+    limit: stop after this many events (None = no limit).
     Returns the number of events uploaded. Propagates errors from the
     collector or the uploader; run_all isolates those per collector."""
+    events = collector.run()
+    if limit is not None:
+        events = itertools.islice(events, limit)
     uploaded = 0
-    for batch in _batched(collector.run(), batch_size):
+    for batch in _batched(events, batch_size):
         uploader.upload(batch)
         uploaded += len(batch)
     return uploaded
@@ -221,8 +227,9 @@ def run_and_upload(
 def run_all(
     directory: Path,
     base_config: dict[str, Any],
-    uploader: ActivityUploader,
+    uploader: Any,
     batch_size: int = DEFAULT_BATCH_SIZE,
+    limit: Optional[int] = None,
 ) -> RunSummary:
     """
     Discover and run every collector in directory. Each collector's
@@ -232,12 +239,13 @@ def run_all(
     the others. Returns a RunSummary with per-collector event counts,
     the number of disabled collectors skipped, and the set of collector
     names that failed during run/upload.
+    limit: stop each collector after this many events (None = no limit).
     """
     summary = RunSummary()
     collectors, summary.skipped = load_collectors(directory, base_config)
     for name, collector in collectors.items():
         try:
-            summary.results[name] = run_and_upload(collector, uploader, batch_size)
+            summary.results[name] = run_and_upload(collector, uploader, batch_size, limit)
         except Exception:
             logger.exception("collector %s failed during run/upload", name)
             summary.failed.add(name)
