@@ -67,14 +67,14 @@ pip install -e ".[all-collectors]"
 iga-collectors [--list] [--collector NAME] [--dry-run] [--limit N]
 ```
 
-| Flag | Requires IGA creds | Description |
-|---|---|---|
-| _(none)_ | Yes | Run all enabled collectors and upload |
-| `--list` | No | List collectors in `COLLECTORS_DIR` with enabled/disabled status |
-| `--collector NAME` | Yes | Run one named collector instead of all |
-| `--dry-run` | No | Poll and map events, print to stdout — skip upload entirely |
-| `--dry-run --collector NAME` | No | Dry run a single collector |
-| `--limit N` | — | Stop each collector after N events; works with or without `--dry-run` |
+| Flag | Env var equivalent | Requires IGA creds | Description |
+|---|---|---|---|
+| _(none)_ | — | Yes | Run all enabled collectors and upload |
+| `--list` | — | No | List collectors in `COLLECTORS_DIR` with enabled/disabled status |
+| `--collector NAME` | — | Yes | Run one named collector instead of all |
+| `--dry-run` | `DRY_RUN=true` | No | Poll and map events, print to stdout — skip upload entirely |
+| `--dry-run --collector NAME` | `DRY_RUN=true` + `--collector` | No | Dry run a single collector |
+| `--limit N` | `LIMIT=N` | — | Stop each collector after N events; works with or without `--dry-run` |
 
 ### COLLECTORS_DIR layout
 
@@ -211,6 +211,10 @@ collector against a live IGA instance.
 | `IGA_OAUTH_SCOPE` | _(none)_ | OAuth2 scope string |
 | `LOG_LEVEL` | `INFO` | Log verbosity: `DEBUG`, `INFO`, `WARNING`, or `ERROR` |
 | `LOG_FORMAT` | `text` | `text` for human-readable output; `json` for structured log aggregation (ELK, Datadog, CloudWatch, Splunk) |
+| `DRY_RUN` | `false` | Set to `true` to print events to stdout instead of uploading — IGA credentials not required |
+| `LIMIT` | _(none)_ | Stop each collector after N events; works with or without `DRY_RUN` |
+
+CLI flags (`--dry-run`, `--limit N`) take precedence over env vars when both are set.
 
 ## Logging
 

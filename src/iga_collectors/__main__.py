@@ -77,7 +77,16 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    if args.dry_run:
+    # Env var fallbacks — CLI flags take precedence when explicitly set.
+    dry_run = args.dry_run or os.environ.get("DRY_RUN", "").lower() in ("1", "true", "yes")
+    limit = args.limit
+    if limit is None and os.environ.get("LIMIT"):
+        try:
+            limit = int(os.environ["LIMIT"])
+        except ValueError:
+            pass
+
+    if dry_run:
         configure_logging()
         collectors_dir_str = os.environ.get("COLLECTORS_DIR")
         if not collectors_dir_str:
@@ -94,8 +103,8 @@ def main() -> int:
             return 0
 
         print("--- DRY RUN: events printed to stdout, nothing uploaded ---", file=sys.stderr)
-        if args.limit is not None:
-            print(f"--- limit: {args.limit} event(s) per collector ---", file=sys.stderr)
+        if limit is not None:
+            print(f"--- limit: {limit} event(s) per collector ---", file=sys.stderr)
 
         uploader = DryRunUploader()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -125,9 +134,9 @@ def main() -> int:
                 if args.collector not in collectors:
                     logger.error("collector %r was found but failed to load", args.collector)
                     return 1
-                run_and_upload(collectors[args.collector], uploader, limit=args.limit)
+                run_and_upload(collectors[args.collector], uploader, limit=limit)
             else:
-                run_all(collectors_dir, base_config, uploader, limit=args.limit)
+                run_all(collectors_dir, base_config, uploader, limit=limit)
         return 0
 
     if args.list:
@@ -204,7 +213,7 @@ def main() -> int:
             logger.error("collector %r was found but failed to load", args.collector)
             return 1
         t0 = time.monotonic()
-        count = run_and_upload(collectors[args.collector], uploader, limit=args.limit)
+        count = run_and_upload(collectors[args.collector], uploader, limit=limit)
         logger.info(
             "run_complete collectors_run=1 collectors_skipped=0 collectors_failed=0 "
             "events_uploaded=%d duration_s=%.1f",
@@ -213,7 +222,7 @@ def main() -> int:
         return 0
 
     t0 = time.monotonic()
-    summary = run_all(config.collectors_dir, base_config, uploader, limit=args.limit)
+    summary = run_all(config.collectors_dir, base_config, uploader, limit=limit)
     duration = time.monotonic() - t0
 
     total_events = sum(summary.results.values())
