@@ -3,7 +3,10 @@
   "event_type": "resource_access",
   "fields": {
     "_native_actor_id": {
-      "source_path": "initiatedBy.user.userPrincipalName",
+      "source_path": [
+        "initiatedBy.user.userPrincipalName",
+        "initiatedBy.servicePrincipal.displayName"
+      ],
       "required": true
     },
     "_event_time": {
