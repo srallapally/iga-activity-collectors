@@ -70,13 +70,14 @@ pip install -e ".[all-collectors]"
 ## CLI reference
 
 ```
-iga-collectors [--list] [--collector NAME] [--dry-run] [--limit N]
+iga-collectors [--list] [--check] [--collector NAME] [--dry-run] [--limit N]
 ```
 
 | Flag | Env var equivalent | Requires IGA creds | Description |
 |---|---|---|---|
 | _(none)_ | — | Yes | Run all enabled collectors and upload |
 | `--list` | — | No | List collectors in `COLLECTORS_DIR` with enabled/disabled status |
+| `--check` | — | Yes | Validate IGA token endpoint and upload endpoint — exits 0 if both pass, 1 otherwise |
 | `--collector NAME` | — | Yes | Run one named collector instead of all |
 | `--dry-run` | `DRY_RUN=true` | No | Poll and map events, print to stdout — skip upload entirely |
 | `--dry-run --collector NAME` | `DRY_RUN=true` + `--collector` | No | Dry run a single collector |
@@ -126,12 +127,12 @@ COLLECTORS_DIR=/path/to/collectors \
 COLLECTORS_DIR=/path/to/collectors iga-collectors --dry-run --limit 10
 ```
 
-| Tested by dry-run | Not tested |
-|---|---|
-| Source credentials (API key, token) | IGA upload endpoint reachability |
-| API pagination | OAuth2 client credentials to IGA |
-| Field mapping (`fieldmap.json` correctness) | Mapping doc format accepted by IGA |
-| Identity correlation | Checkpoint write-back |
+| Tested by dry-run | Tested by `--check` | Not tested by either |
+|---|---|---|
+| Source credentials (API key, token) | IGA OAuth2 token acquisition | Mapping doc format accepted by IGA |
+| API pagination | IGA upload endpoint reachability | Checkpoint write-back |
+| Field mapping (`fieldmap.json` correctness) | | |
+| Identity correlation | | |
 
 ## Docker (one-shot)
 
