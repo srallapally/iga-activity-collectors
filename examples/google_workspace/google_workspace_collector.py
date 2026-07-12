@@ -23,6 +23,12 @@ API returns can bundle MULTIPLE events in its `events` array — this is
 flattened to one flat record per inner event before the field map ever
 sees it.
 
+application_names controls which Workspace applications to poll. Multiple
+applications are fetched in a single collector run (login, admin, token).
+Each application can have its own event_name->result mapping entry in
+event_name_to_result. Pass application_names=["login"] to restore the
+previous single-app behaviour.
+
 Field mapping is declarative — see google_workspace_collector.fieldmap.json.
 """
 
@@ -41,9 +47,26 @@ from iga_collectors.field_mapping import DeclarativeMappedCollector
 REPORTS_API_SCOPE = "https://www.googleapis.com/auth/admin.reports.audit.readonly"
 REPORTS_API_BASE = "https://admin.googleapis.com/admin/reports/v1/activity/users"
 
+DEFAULT_APPLICATION_NAMES = ["login", "admin", "token"]
+
 DEFAULT_EVENT_NAME_TO_RESULT = {
-    "login_success": "Success",
-    "login_failure": "Failure",
+    # login application
+    "login_success": "success",
+    "login_failure": "failure",
+    "logout": "success",
+    # admin application — account/group lifecycle
+    "CREATE_USER": "success",
+    "DELETE_USER": "success",
+    "SUSPEND_USER": "success",
+    "UNSUSPEND_USER": "success",
+    "RENAME_USER": "success",
+    "CREATE_GROUP": "success",
+    "DELETE_GROUP": "success",
+    "ADD_GROUP_MEMBER": "success",
+    "REMOVE_GROUP_MEMBER": "success",
+    # token application — OAuth2 grants and revocations
+    "AUTHORIZE": "success",
+    "REVOKE": "success",
 }
 
 FIELD_MAP_PATH = Path(__file__).parent / "google_workspace_collector.fieldmap.json"
@@ -55,7 +78,7 @@ class GoogleWorkspaceReportsCollector(DeclarativeMappedCollector):
         *,
         service_account_key_path: str,
         admin_email: str,
-        application_name: str = "login",
+        application_names: Optional[list] = None,
         event_name_to_result: Optional[dict[str, str]] = None,
         initial_lookback_seconds: Optional[int] = None,
         max_results: int = 1000,
@@ -65,7 +88,7 @@ class GoogleWorkspaceReportsCollector(DeclarativeMappedCollector):
         **declarative_kwargs: Any,
     ):
         super().__init__(**declarative_kwargs)
-        self._application_name = application_name
+        self._application_names = application_names if application_names is not None else DEFAULT_APPLICATION_NAMES
         self._event_name_to_result = event_name_to_result or DEFAULT_EVENT_NAME_TO_RESULT
         self._initial_lookback_seconds = initial_lookback_seconds
         self._max_results = max_results
@@ -87,8 +110,14 @@ class GoogleWorkspaceReportsCollector(DeclarativeMappedCollector):
                 "not configured; the first run needs an explicit starting point"
             )
 
-        url = f"{REPORTS_API_BASE}/all/applications/{self._application_name}"
-        params = {
+        for application_name in self._application_names:
+            yield from self._poll_application(since_dt, now, application_name)
+
+    def _poll_application(
+        self, since_dt: datetime, now: datetime, application_name: str
+    ) -> Iterator[dict[str, Any]]:
+        url = f"{REPORTS_API_BASE}/all/applications/{application_name}"
+        params: Optional[dict] = {
             "startTime": since_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "endTime": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "maxResults": self._max_results,
@@ -101,7 +130,7 @@ class GoogleWorkspaceReportsCollector(DeclarativeMappedCollector):
             body = response.json()
 
             for item in body.get("items", []):
-                yield from self._activity_to_records(item)
+                yield from self._activity_to_records(item, application_name)
 
             next_token = body.get("nextPageToken")
             if next_token:
@@ -109,7 +138,9 @@ class GoogleWorkspaceReportsCollector(DeclarativeMappedCollector):
             else:
                 url = None
 
-    def _activity_to_records(self, item: dict[str, Any]) -> Iterator[dict[str, Any]]:
+    def _activity_to_records(
+        self, item: dict[str, Any], application_name: str = ""
+    ) -> Iterator[dict[str, Any]]:
         actor = item.get("actor") or {}
         # profileId is the immutable Google account identifier; email is mutable.
         actor_id = actor.get("profileId") or actor.get("email")
@@ -121,6 +152,7 @@ class GoogleWorkspaceReportsCollector(DeclarativeMappedCollector):
         if not event_time:
             return
 
+        app_name = item_id.get("applicationName") or application_name
         for event in item.get("events", []):
             event_name = event.get("name")
             if not event_name:
@@ -128,7 +160,7 @@ class GoogleWorkspaceReportsCollector(DeclarativeMappedCollector):
             yield {
                 "actor_id": actor_id,
                 "action": event_name,
-                "applicationName": item_id.get("applicationName") or self._application_name,
+                "applicationName": app_name,
                 "time": event_time,
                 "_resolved_result": self._event_name_to_result.get(event_name, ""),
             }
@@ -163,7 +195,7 @@ def create_collector(config: dict[str, Any]):
     return GoogleWorkspaceReportsCollector(
         service_account_key_path=config["gws_service_account_key_path"],
         admin_email=config["gws_admin_email"],
-        application_name=config.get("gws_application_name", "login"),
+        application_names=config.get("gws_application_names", DEFAULT_APPLICATION_NAMES),
         initial_lookback_seconds=config.get("gws_initial_lookback_seconds", 3600),
         field_map=field_map,
         source_timezone=timezone.utc,
