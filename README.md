@@ -17,26 +17,30 @@ the SDK (`src/iga_collectors/`) plus reference implementations
 
 ## Status
 
-| Module                          | Status      |
-|----------------------------------|-------------|
-| `iga_collectors.base`            | Implemented |
-| `iga_collectors.mapping`         | Implemented |
-| `iga_collectors.uploader`        | Stub — pending |
-| `iga_collectors.discovery`       | Stub — pending |
-| `iga_collectors.config`          | Stub — pending |
-| `examples/jdbc_collector`         | Stub — pending |
-| `examples/log_file_collector`     | Stub — pending |
-| `examples/racf_audit_log_collector` | Stub — pending |
-| `examples/windows_eventlog_collector` | Stub — pending |
-| `examples/entra_collector`        | Stub — pending |
-| `examples/azure_collector`        | Stub — pending |
-| `examples/office365_collector`    | Stub — pending |
-| `examples/google_workspace_collector` | Stub — pending |
-| `examples/salesforce_collector`   | Stub — pending |
-| `examples/aws_collector`          | Stub — pending |
-| `examples/google_cloud_collector` | Stub — pending |
-| `examples/okta_collector`         | Stub — pending |
-| `examples/otel_collector`         | Stub — pending |
+| Module                                    | Status          |
+|-------------------------------------------|-----------------|
+| `iga_collectors.base`                     | Implemented     |
+| `iga_collectors.field_mapping`            | Implemented     |
+| `iga_collectors.mapping`                  | Implemented     |
+| `iga_collectors.uploader`                 | Implemented     |
+| `iga_collectors.config`                   | Implemented     |
+| `iga_collectors.discovery`                | Implemented     |
+| `examples/acme`                           | Implemented     |
+| `examples/activedirectory`                | Implemented     |
+| `examples/aws`                            | Implemented     |
+| `examples/azure`                          | Implemented     |
+| `examples/entra`                          | Implemented     |
+| `examples/google_cloud`                   | Implemented     |
+| `examples/google_workspace`               | Implemented     |
+| `examples/jaeger`                         | Implemented     |
+| `examples/jdbc`                           | Implemented     |
+| `examples/logfile`                        | Implemented     |
+| `examples/m365`                           | Implemented     |
+| `examples/okta`                           | Implemented     |
+| `examples/otel`                           | Implemented     |
+| `examples/salesforce`                     | Implemented     |
+| `examples/windows`                        | Implemented     |
+| `examples/unfinished/racf_audit_log_collector` | Stub — pending |
 
 Note: `tests/fixtures/testActivity.csv` is a minimal synthetic fixture, not
 the real file from the original API example (its content was never

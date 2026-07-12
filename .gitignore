@@ -1,0 +1,6 @@
+.polaris-setup-progress.json
+.DS_Store
+*.egg-info/
+__pycache__/
+*.pyc
+.env
