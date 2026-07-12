@@ -103,14 +103,21 @@ class CheckpointStore:
 
     def get(self, collector_id: str) -> Optional[str]:
         if not self.path.exists():
+            logger.debug("checkpoint no_entry collector=%s", collector_id)
             return None
         data = json.loads(self.path.read_text())
-        return data.get(collector_id)
+        position = data.get(collector_id)
+        if position is None:
+            logger.debug("checkpoint no_entry collector=%s", collector_id)
+        else:
+            logger.debug("checkpoint loaded collector=%s position=%s", collector_id, position)
+        return position
 
     def set(self, collector_id: str, position: str) -> None:
         data = json.loads(self.path.read_text()) if self.path.exists() else {}
         data[collector_id] = position
         self.path.write_text(json.dumps(data, indent=2))
+        logger.debug("checkpoint saved collector=%s position=%s", collector_id, position)
 
 
 # ---------------------------------------------------------------------------
@@ -234,8 +241,15 @@ class BaseCollector(ABC):
         raise NotImplementedError
 
     def run(self) -> Iterator[dict[str, Any]]:
+        import time as _time
         since = self.checkpoint_store.get(self.collector_id)
+        logger.info(
+            "collector starting collector=%s since=%s",
+            self.collector_id, since or "beginning",
+        )
+        t0 = _time.monotonic()
         last_position = since
+        event_count = 0
         for activity in self.poll(since):
             actor_global_id = self.correlator.correlate(
                 activity.native_user_id, self.source_system
@@ -243,8 +257,8 @@ class BaseCollector(ABC):
             if actor_global_id is None:
                 if not self.store_uncorrelated:
                     logger.info(
-                        "Dropping uncorrelated activity: source_system=%s native_user_id=%s",
-                        self.source_system, activity.native_user_id,
+                        "record dropped uncorrelated collector=%s native_user_id=%s",
+                        self.collector_id, activity.native_user_id,
                     )
                     last_position = self.next_position(activity)
                     continue
@@ -252,11 +266,29 @@ class BaseCollector(ABC):
                     f"no identity for native_user_id={activity.native_user_id!r} "
                     f"in source_system={self.source_system!r}"
                 )
-            yield self.map_to_event(activity, actor_global_id)
+            logger.debug(
+                "correlation collector=%s native_id=%s global_id=%s",
+                self.collector_id, activity.native_user_id, actor_global_id,
+            )
+            event = self.map_to_event(activity, actor_global_id)
+            if event is None:
+                logger.debug(
+                    "record dropped map_to_event returned None collector=%s",
+                    self.collector_id,
+                )
+                last_position = self.next_position(activity)
+                continue
+            yield event
+            event_count += 1
             last_position = self.next_position(activity)
 
         if last_position != since:
             self.checkpoint_store.set(self.collector_id, last_position)
+
+        logger.info(
+            "collector complete collector=%s events=%d duration_s=%.1f",
+            self.collector_id, event_count, _time.monotonic() - t0,
+        )
 
 
 # ---------------------------------------------------------------------------
