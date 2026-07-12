@@ -3,7 +3,10 @@
   "event_type": "resource_access",
   "fields": {
     "_native_actor_id": {
-      "source_path": ["actor.alternateId", "actor.displayName"],
+      "source_path": [
+        "actor.id",
+        "actor.alternateId"
+      ],
       "required": true
     },
     "_event_time": {
@@ -21,7 +24,10 @@
       "default": "unknown"
     },
     "resource.resource_name": {
-      "source_path": ["target[0].alternateId", "target[0].displayName"],
+      "source_path": [
+        "target[0].alternateId",
+        "target[0].displayName"
+      ],
       "default": "unknown_target"
     }
   }

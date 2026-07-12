@@ -3,7 +3,12 @@
   "event_type": "resource_access",
   "fields": {
     "_native_actor_id": {
-      "source_path": ["TargetUserName", "SubjectUserName"],
+      "source_path": [
+        "TargetSid",
+        "SubjectUserSid",
+        "TargetUserName",
+        "SubjectUserName"
+      ],
       "required": true
     },
     "_event_time": {
@@ -21,7 +26,11 @@
       "default": "unknown"
     },
     "resource.resource_name": {
-      "source_path": ["ShareName", "ObjectName", "Computer"],
+      "source_path": [
+        "ShareName",
+        "ObjectName",
+        "Computer"
+      ],
       "default": "unknown_resource"
     }
   }

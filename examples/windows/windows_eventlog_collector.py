@@ -142,12 +142,18 @@ class WindowsEventLogCollector(TabularActivityCollector):
                 if name:
                     data[name] = d.text or ""
 
-        user = data.get("TargetUserName") or data.get("SubjectUserName")
-        if not user:
+        # SID is the immutable account identifier; fall back to name when absent.
+        sid = (
+            data.get("TargetSid") or data.get("TargetUserSid")
+            or data.get("SubjectUserSid")
+        )
+        name = data.get("TargetUserName") or data.get("SubjectUserName")
+        actor_id = sid or name
+        if not actor_id:
             return None
 
         return {
-            "user": user,
+            "actor_id": actor_id,
             "action": action,
             "target": computer,
             "time": time_value,
@@ -170,7 +176,7 @@ def create_collector(config: dict[str, Any]):
     return WindowsEventLogCollector(
         evtx_path=config["evtx_path"],
         column_map=ColumnMap(
-            native_user_id="user", action="action", target="target",
+            native_user_id="actor_id", action="action", target="target",
             time="time", result="result",
         ),
         source_timezone=timezone.utc,
