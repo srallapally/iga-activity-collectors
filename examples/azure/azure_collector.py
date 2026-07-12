@@ -53,8 +53,24 @@ ARM_BASE_URL = "https://management.azure.com"
 ACTIVITY_LOG_API_VERSION = "2015-04-01"
 
 DEFAULT_OPERATION_NAMES = frozenset({
+    # RBAC role assignments (grants and revokes)
     "Microsoft.Authorization/roleAssignments/write",
     "Microsoft.Authorization/roleAssignments/delete",
+    # Custom role definitions
+    "Microsoft.Authorization/roleDefinitions/write",
+    "Microsoft.Authorization/roleDefinitions/delete",
+    # Classic administrator role membership
+    "Microsoft.Authorization/classicAdministrators/write",
+    "Microsoft.Authorization/classicAdministrators/delete",
+    # Azure Policy assignments
+    "Microsoft.Authorization/policyAssignments/write",
+    "Microsoft.Authorization/policyAssignments/delete",
+    # Managed identity lifecycle
+    "Microsoft.ManagedIdentity/userAssignedIdentities/write",
+    "Microsoft.ManagedIdentity/userAssignedIdentities/delete",
+    # Managed identity federation credentials (workload identity federation)
+    "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/write",
+    "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials/delete",
 })
 
 FIELD_MAP_PATH = Path(__file__).parent / "azure_collector.fieldmap.json"

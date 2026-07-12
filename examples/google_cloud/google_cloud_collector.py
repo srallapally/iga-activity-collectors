@@ -39,11 +39,34 @@ LOGGING_API_URL = "https://logging.googleapis.com/v2/entries:list"
 LOGGING_SCOPE = "https://www.googleapis.com/auth/logging.read"
 
 DEFAULT_METHOD_NAMES = frozenset({
+    # IAM policy changes on any resource
     "SetIamPolicy",
+    # Service account lifecycle
     "google.iam.admin.v1.CreateServiceAccount",
     "google.iam.admin.v1.DeleteServiceAccount",
+    "google.iam.admin.v1.UndeleteServiceAccount",
+    "google.iam.admin.v1.EnableServiceAccount",
+    "google.iam.admin.v1.DisableServiceAccount",
+    "google.iam.admin.v1.PatchServiceAccount",
+    "google.iam.admin.v1.UpdateServiceAccount",
+    # Service account key management
     "google.iam.admin.v1.CreateServiceAccountKey",
     "google.iam.admin.v1.DeleteServiceAccountKey",
+    "google.iam.admin.v1.UploadServiceAccountKey",
+    # Workload Identity Federation — pool and provider lifecycle
+    "google.iam.v1.WorkloadIdentityPools.CreateWorkloadIdentityPool",
+    "google.iam.v1.WorkloadIdentityPools.UpdateWorkloadIdentityPool",
+    "google.iam.v1.WorkloadIdentityPools.DeleteWorkloadIdentityPool",
+    "google.iam.v1.WorkloadIdentityPools.UndeleteWorkloadIdentityPool",
+    "google.iam.v1.WorkloadIdentityPools.CreateWorkloadIdentityPoolProvider",
+    "google.iam.v1.WorkloadIdentityPools.UpdateWorkloadIdentityPoolProvider",
+    "google.iam.v1.WorkloadIdentityPools.DeleteWorkloadIdentityPoolProvider",
+    "google.iam.v1.WorkloadIdentityPools.UndeleteWorkloadIdentityPoolProvider",
+    # Organization/folder/project-level role grants and custom role changes
+    "google.iam.admin.v1.CreateRole",
+    "google.iam.admin.v1.UpdateRole",
+    "google.iam.admin.v1.DeleteRole",
+    "google.iam.admin.v1.UndeleteRole",
 })
 
 FIELD_MAP_PATH = Path(__file__).parent / "google_cloud_collector.fieldmap.json"
