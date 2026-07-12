@@ -140,7 +140,11 @@ class EntraSignInCollector(_EntraGraphCollectorBase):
 class EntraServicePrincipalSignInCollector(_EntraGraphCollectorBase):
     """Polls /auditLogs/servicePrincipalSignIns — OAuth2 client_credentials
     and certificate-authenticated app sign-ins. Requires the same
-    AuditLog.Read.All permission as the user sign-in stream."""
+    AuditLog.Read.All permission as the user sign-in stream.
+
+    Note: this endpoint does not support $orderby (Graph returns 400).
+    Results arrive in reverse-chronological order; the checkpoint dedup
+    filter in poll() discards anything at or before the last position."""
 
     def poll_records(self, since_position: Optional[str]) -> Iterator[dict[str, Any]]:
         since_dt = self._resolve_since_dt(since_position)
@@ -148,7 +152,6 @@ class EntraServicePrincipalSignInCollector(_EntraGraphCollectorBase):
         params = {
             "$filter": f"createdDateTime ge {since_dt.strftime('%Y-%m-%dT%H:%M:%SZ')}",
             "$top": self._page_size,
-            "$orderby": "createdDateTime asc",
         }
         yield from self._graph.get_pages(url, params)
 
