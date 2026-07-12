@@ -1,4 +1,4 @@
-# examples/entra_collector.py
+# examples/entra/entra_collector.py
 """
 Microsoft Entra ID Collector — Microsoft Graph auditLogs API.
 
@@ -12,24 +12,22 @@ endpoint with scope https://graph.microsoft.com/.default.
 
 Two distinct Graph resources are both "Entra ID activity" but different
 endpoints with different shapes:
-  - /auditLogs/signIns        — authentication events
   - /auditLogs/directoryAudits — account/group/app lifecycle changes
+  - /auditLogs/signIns         — authentication events
 
-Per this project's "focus is on user (account) related activity",
-create_collector() wires up EntraDirectoryAuditCollector by default,
-loading entra_collector.fieldmap.json. EntraSignInCollector is also
-implemented, using its own entra_collector.signin.fieldmap.json — not
-wired to the default factory, since directoryAudits is the primary use
-case here; instantiate it yourself (with its own collector_id/checkpoint,
-since it's a distinct data source) if sign-in telemetry is also wanted.
+create_collector() returns EntraCombinedCollector, which runs both
+sub-streams in sequence under a single COLLECTORS_DIR entry. Each stream
+keeps its own checkpoint key (entra_directory_audits, entra_sign_ins) so
+they advance independently — a sign-in polling failure does not affect the
+directory audits checkpoint.
 
-Field mapping is declarative for both classes — see the two .fieldmap.json
-files. This module's own job is now purely Graph API mechanics: OAuth2
-token handling, @odata.nextLink pagination. poll_records() yields raw
-Graph API items completely unmodified.
+Field mapping is declarative for both streams:
+  entra_collector.fieldmap.json         — directoryAudits
+  entra_collector.signin.fieldmap.json  — signIns
 
-Timestamp parsing reuses the shared "parse_iso8601" field map transform
-(iga_collectors.field_mapping) rather than a local copy.
+Required Graph API permissions (application, with admin consent):
+  AuditLog.Read.All
+  Directory.Read.All
 """
 
 from __future__ import annotations
@@ -40,7 +38,7 @@ from typing import Any, Iterator, Optional
 
 import requests
 
-from iga_collectors.base import CheckpointStore, PassthroughCorrelator
+from iga_collectors.base import BaseCollector, CheckpointStore, PassthroughCorrelator, RawActivity
 from iga_collectors.field_mapping import DeclarativeMappedCollector
 from iga_collectors.uploader import TokenClient
 
@@ -85,23 +83,20 @@ class _GraphClient:
 
 
 class _EntraGraphCollectorBase(DeclarativeMappedCollector):
-    """Shared "since checkpoint or initial lookback, else error" pagination
-    entry point for both Graph audit endpoints below."""
+    """Shared since-position resolution and Graph pagination for both
+    auditLogs endpoints. Accepts a pre-built _GraphClient so both
+    sub-collectors share one token and one session."""
 
     def __init__(
         self,
         *,
-        tenant_id: str,
-        client_id: str,
-        client_secret: str,
+        graph: _GraphClient,
         initial_lookback_seconds: Optional[int] = None,
         page_size: int = 100,
-        session: Optional[requests.Session] = None,
-        timeout: int = 30,
         **declarative_kwargs: Any,
     ):
         super().__init__(**declarative_kwargs)
-        self._graph = _GraphClient(tenant_id, client_id, client_secret, session, timeout)
+        self._graph = graph
         self._initial_lookback_seconds = initial_lookback_seconds
         self._page_size = page_size
 
@@ -116,41 +111,108 @@ class _EntraGraphCollectorBase(DeclarativeMappedCollector):
         )
 
 
-class EntraSignInCollector(_EntraGraphCollectorBase):
-    def poll_records(self, since_position: Optional[str]) -> Iterator[dict[str, Any]]:
-        since_dt = self._resolve_since_dt(since_position)
-        filter_str = f"createdDateTime ge {since_dt.strftime('%Y-%m-%dT%H:%M:%SZ')}"
-        url = f"{GRAPH_BASE_URL}/auditLogs/signIns"
-        params = {"$filter": filter_str, "$top": self._page_size, "$orderby": "createdDateTime asc"}
-        yield from self._graph.get_pages(url, params)
-
-
 class EntraDirectoryAuditCollector(_EntraGraphCollectorBase):
     def poll_records(self, since_position: Optional[str]) -> Iterator[dict[str, Any]]:
         since_dt = self._resolve_since_dt(since_position)
-        filter_str = f"activityDateTime ge {since_dt.strftime('%Y-%m-%dT%H:%M:%SZ')}"
         url = f"{GRAPH_BASE_URL}/auditLogs/directoryAudits"
-        params = {"$filter": filter_str, "$top": self._page_size, "$orderby": "activityDateTime asc"}
+        params = {
+            "$filter": f"activityDateTime ge {since_dt.strftime('%Y-%m-%dT%H:%M:%SZ')}",
+            "$top": self._page_size,
+            "$orderby": "activityDateTime asc",
+        }
         yield from self._graph.get_pages(url, params)
 
 
+class EntraSignInCollector(_EntraGraphCollectorBase):
+    def poll_records(self, since_position: Optional[str]) -> Iterator[dict[str, Any]]:
+        since_dt = self._resolve_since_dt(since_position)
+        url = f"{GRAPH_BASE_URL}/auditLogs/signIns"
+        params = {
+            "$filter": f"createdDateTime ge {since_dt.strftime('%Y-%m-%dT%H:%M:%SZ')}",
+            "$top": self._page_size,
+            "$orderby": "createdDateTime asc",
+        }
+        yield from self._graph.get_pages(url, params)
+
+
+class EntraCombinedCollector(BaseCollector):
+    """Runs EntraDirectoryAuditCollector and EntraSignInCollector in sequence
+    under a single COLLECTORS_DIR entry. Each sub-stream has its own
+    collector_id and checkpoint key so they advance independently."""
+
+    def __init__(
+        self,
+        *,
+        directory_audits: EntraDirectoryAuditCollector,
+        sign_ins: EntraSignInCollector,
+        **base_kwargs: Any,
+    ):
+        super().__init__(**base_kwargs)
+        self._directory_audits = directory_audits
+        self._sign_ins = sign_ins
+
+    # poll/next_position/map_to_event are not used — run() delegates entirely
+    # to sub-collectors which each have their own complete implementations.
+    def poll(self, since_position: Optional[str]) -> Iterator[RawActivity]:
+        raise NotImplementedError
+
+    def next_position(self, activity: RawActivity) -> str:
+        raise NotImplementedError
+
+    def map_to_event(self, activity: RawActivity, actor_global_id: str) -> dict[str, Any]:
+        raise NotImplementedError
+
+    def run(self) -> Iterator[dict[str, Any]]:
+        yield from self._directory_audits.run()
+        yield from self._sign_ins.run()
+
+
 # ---------------------------------------------------------------------------
-# Reference example: directoryAudits (account/group/app lifecycle events).
+# Discovery entry point — returns the combined collector.
 # ---------------------------------------------------------------------------
 
 def create_collector(config: dict[str, Any]):
     import json
-    field_map = json.loads(FIELD_MAP_PATH.read_text())
 
-    return EntraDirectoryAuditCollector(
-        tenant_id=config["entra_tenant_id"],
-        client_id=config["entra_client_id"],
-        client_secret=config["entra_client_secret"],
-        initial_lookback_seconds=config.get("entra_initial_lookback_seconds", 3600),
-        field_map=field_map,
+    tenant_id = config["entra_tenant_id"]
+    client_id = config["entra_client_id"]
+    client_secret = config["entra_client_secret"]
+    initial_lookback_seconds = config.get("entra_initial_lookback_seconds", 3600)
+    checkpoint_store = CheckpointStore(Path(config["checkpoint_path"]))
+    correlator = PassthroughCorrelator()
+
+    # Both sub-collectors share the same Graph client (one token, one session)
+    # and the same CheckpointStore, but each has its own collector_id so their
+    # checkpoint positions are tracked independently in the store.
+    graph = _GraphClient(tenant_id, client_id, client_secret)
+
+    directory_audits = EntraDirectoryAuditCollector(
+        graph=graph,
+        initial_lookback_seconds=initial_lookback_seconds,
+        field_map=json.loads(FIELD_MAP_PATH.read_text()),
         source_timezone=timezone.utc,
         collector_id="entra_directory_audits",
         source_system="entra_id",
-        correlator=PassthroughCorrelator(),
-        checkpoint_store=CheckpointStore(Path(config["checkpoint_path"])),
+        correlator=correlator,
+        checkpoint_store=checkpoint_store,
+    )
+
+    sign_ins = EntraSignInCollector(
+        graph=graph,
+        initial_lookback_seconds=initial_lookback_seconds,
+        field_map=json.loads(SIGNIN_FIELD_MAP_PATH.read_text()),
+        source_timezone=timezone.utc,
+        collector_id="entra_sign_ins",
+        source_system="entra_id",
+        correlator=correlator,
+        checkpoint_store=checkpoint_store,
+    )
+
+    return EntraCombinedCollector(
+        directory_audits=directory_audits,
+        sign_ins=sign_ins,
+        collector_id="entra_collector",
+        source_system="entra_id",
+        correlator=correlator,
+        checkpoint_store=checkpoint_store,
     )
