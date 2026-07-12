@@ -220,6 +220,9 @@ class BaseCollector(ABC):
         self.correlator = correlator
         self.checkpoint_store = checkpoint_store
         self.store_uncorrelated = store_uncorrelated
+        # Set by discovery.run_all() after factory instantiation; None means
+        # "inherit the process-level LOG_LEVEL / LOG_FORMAT setting".
+        self.log_level: Optional[str] = None
 
     @abstractmethod
     def poll(self, since_position: Optional[str]) -> Iterator[RawActivity]:
@@ -241,54 +244,71 @@ class BaseCollector(ABC):
         raise NotImplementedError
 
     def run(self) -> Iterator[dict[str, Any]]:
+        import json as _json
         import time as _time
-        since = self.checkpoint_store.get(self.collector_id)
-        logger.info(
-            "collector starting collector=%s since=%s",
-            self.collector_id, since or "beginning",
-        )
-        t0 = _time.monotonic()
-        last_position = since
-        event_count = 0
-        for activity in self.poll(since):
-            actor_global_id = self.correlator.correlate(
-                activity.native_user_id, self.source_system
+
+        # Push per-collector log level for this run, restore on exit.
+        root_logger = logging.getLogger("iga_collectors")
+        _saved_level = root_logger.level
+        if self.log_level:
+            numeric = logging.getLevelName(self.log_level.upper())
+            if isinstance(numeric, int):
+                root_logger.setLevel(numeric)
+
+        try:
+            since = self.checkpoint_store.get(self.collector_id)
+            logger.info(
+                "collector starting collector=%s since=%s",
+                self.collector_id, since or "beginning",
             )
-            if actor_global_id is None:
-                if not self.store_uncorrelated:
-                    logger.info(
-                        "record dropped uncorrelated collector=%s native_user_id=%s",
-                        self.collector_id, activity.native_user_id,
+            t0 = _time.monotonic()
+            last_position = since
+            event_count = 0
+            for activity in self.poll(since):
+                actor_global_id = self.correlator.correlate(
+                    activity.native_user_id, self.source_system
+                )
+                if actor_global_id is None:
+                    if not self.store_uncorrelated:
+                        logger.info(
+                            "record dropped uncorrelated collector=%s native_user_id=%s",
+                            self.collector_id, activity.native_user_id,
+                        )
+                        last_position = self.next_position(activity)
+                        continue
+                    raise UncorrelatedActivityError(
+                        f"no identity for native_user_id={activity.native_user_id!r} "
+                        f"in source_system={self.source_system!r}"
+                    )
+                logger.debug(
+                    "correlation collector=%s native_id=%s global_id=%s",
+                    self.collector_id, activity.native_user_id, actor_global_id,
+                )
+                event = self.map_to_event(activity, actor_global_id)
+                if event is None:
+                    logger.debug(
+                        "record dropped map_to_event returned None collector=%s",
+                        self.collector_id,
                     )
                     last_position = self.next_position(activity)
                     continue
-                raise UncorrelatedActivityError(
-                    f"no identity for native_user_id={activity.native_user_id!r} "
-                    f"in source_system={self.source_system!r}"
-                )
-            logger.debug(
-                "correlation collector=%s native_id=%s global_id=%s",
-                self.collector_id, activity.native_user_id, actor_global_id,
-            )
-            event = self.map_to_event(activity, actor_global_id)
-            if event is None:
                 logger.debug(
-                    "record dropped map_to_event returned None collector=%s",
-                    self.collector_id,
+                    "mapped event collector=%s event=%s",
+                    self.collector_id, _json.dumps(event, default=str),
                 )
+                yield event
+                event_count += 1
                 last_position = self.next_position(activity)
-                continue
-            yield event
-            event_count += 1
-            last_position = self.next_position(activity)
 
-        if last_position != since:
-            self.checkpoint_store.set(self.collector_id, last_position)
+            if last_position != since:
+                self.checkpoint_store.set(self.collector_id, last_position)
 
-        logger.info(
-            "collector complete collector=%s events=%d duration_s=%.1f",
-            self.collector_id, event_count, _time.monotonic() - t0,
-        )
+            logger.info(
+                "collector complete collector=%s events=%d duration_s=%.1f",
+                self.collector_id, event_count, _time.monotonic() - t0,
+            )
+        finally:
+            root_logger.setLevel(_saved_level)
 
 
 # ---------------------------------------------------------------------------
