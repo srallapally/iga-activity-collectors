@@ -1,4 +1,5 @@
 {
+  "enabled": false,
   "gcp_project_id": "REPLACE_ME",
   "gcp_service_account_key_path": "/etc/iga-collectors/secrets/gcp-sa.json",
   "gcp_initial_lookback_seconds": 3600

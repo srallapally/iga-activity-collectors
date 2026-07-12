@@ -1,4 +1,5 @@
 {
+  "enabled": false,
   "azure_subscription_id": "REPLACE_ME",
   "azure_tenant_id": "REPLACE_ME",
   "azure_client_id": "REPLACE_ME",

@@ -1,6 +1,9 @@
 {
+  "enabled": false,
   "jdbc_url": "jdbc:mysql://localhost:3306/activity_db",
-  "jdbc_driver_jars": ["/opt/jdbc-drivers/mysql-connector-j.jar"],
+  "jdbc_driver_jars": [
+    "/opt/jdbc-drivers/mysql-connector-j.jar"
+  ],
   "db_user": "REPLACE_ME",
   "db_password": "REPLACE_ME"
 }
