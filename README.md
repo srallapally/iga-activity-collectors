@@ -94,6 +94,36 @@ COLLECTORS_DIR/
 
 All example `.json` configs ship with `"enabled": false`. A collector that has no `.json` config, or whose config omits `"enabled"`, is treated as enabled.
 
+Three additional keys can appear in any collector's `.json` config:
+
+| Key | Type | Default | Effect |
+|---|---|---|---|
+| `enabled` | bool | `true` | `false` skips this collector entirely |
+| `dry_run` | bool | `false` | `true` runs the full pipeline but prints events to stdout instead of uploading to IGA |
+| `log_level` | string | _(inherit)_ | Overrides `LOG_LEVEL` for this collector's run only — `DEBUG` prints raw API records and mapped event dicts |
+
+`dry_run` and `log_level` are per-collector; the global `--dry-run` / `DRY_RUN` and `LOG_LEVEL` settings remain unchanged for other collectors in the same run.
+
+Example — a collector configured for debug output and local testing:
+
+```json
+{
+  "enabled": true,
+  "dry_run": true,
+  "log_level": "DEBUG",
+  "okta_org_url": "https://myorg.okta.com",
+  "okta_api_token": "REPLACE_ME"
+}
+```
+
+`--list` shows markers for the active mode:
+
+```
+okta_collector  [dry-run]
+entra_collector
+ad_collector    [disabled]
+```
+
 ### List deployed collectors
 
 Prints each collector with a `[disabled]` marker for unconfigured ones. Does not require IGA credentials:

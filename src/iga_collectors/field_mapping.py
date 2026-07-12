@@ -400,6 +400,10 @@ class DeclarativeMappedCollector(BaseCollector):
         )
         yielded = 0
         for record in self.poll_records(since_position):
+            logger.debug(
+                "raw record collector=%s record=%s",
+                self.collector_id, json.dumps(record, default=str),
+            )
             activity = self._record_to_activity(record)
             if activity is None:
                 continue

@@ -130,7 +130,7 @@ def main() -> int:
                             return 1
                     except (OSError, json.JSONDecodeError):
                         pass
-                collectors, _ = load_collectors(collectors_dir, base_config)
+                collectors, _, _ = load_collectors(collectors_dir, base_config)
                 if args.collector not in collectors:
                     logger.error("collector %r was found but failed to load", args.collector)
                     return 1
@@ -160,6 +160,8 @@ def main() -> int:
                         cfg = json.loads(config_path.read_text())
                         if not cfg.get("enabled", True):
                             label += "  [disabled]"
+                        elif cfg.get("dry_run"):
+                            label += "  [dry-run]"
                     except (OSError, json.JSONDecodeError):
                         pass
                 print(label)
@@ -208,7 +210,7 @@ def main() -> int:
                     return 1
             except (OSError, json.JSONDecodeError):
                 pass
-        collectors, _ = load_collectors(config.collectors_dir, base_config)
+        collectors, _, _ = load_collectors(config.collectors_dir, base_config)
         if args.collector not in collectors:
             logger.error("collector %r was found but failed to load", args.collector)
             return 1
