@@ -150,9 +150,10 @@ class EntraServicePrincipalSignInCollector(_EntraGraphCollectorBase):
     True (the default) for correctness."""
 
     def poll_records(self, since_position: Optional[str]) -> Iterator[dict[str, Any]]:
-        url = f"{GRAPH_BETA_URL}/auditLogs/servicePrincipalSignIns"
-        params: dict = {"$top": self._page_size}
-        yield from self._graph.get_pages(url, params)
+        # The beta endpoint rejects all query parameters including $filter,
+        # $orderby, and $top — fetch with no params and accept whatever the
+        # API returns per page.
+        yield from self._graph.get_pages(f"{GRAPH_BETA_URL}/auditLogs/servicePrincipalSignIns")
 
 
 class EntraCombinedCollector(BaseCollector):
@@ -191,7 +192,26 @@ class EntraCombinedCollector(BaseCollector):
     def run(self) -> Iterator[dict[str, Any]]:
         yield from self._directory_audits.run()
         yield from self._sign_ins.run()
-        yield from self._sp_sign_ins.run()
+        yield from self._run_sp_sign_ins()
+
+    def _run_sp_sign_ins(self) -> Iterator[dict[str, Any]]:
+        """Wraps the SP sign-ins stream so a 400/403 from the beta endpoint
+        (missing Azure AD Premium license or unsupported tenant) is logged as
+        a warning rather than aborting the combined collector and discarding
+        directory audits and user sign-ins that already succeeded."""
+        import requests as _requests
+        try:
+            yield from self._sp_sign_ins.run()
+        except _requests.exceptions.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else "?"
+            import logging as _logging
+            _logging.getLogger(__name__).warning(
+                "entra_sp_sign_ins stream failed with HTTP %s — "
+                "service principal sign-ins require Azure AD Premium P1/P2 "
+                "and the AuditLog.Read.All application permission; "
+                "directory audits and user sign-ins are unaffected",
+                status,
+            )
 
 
 # ---------------------------------------------------------------------------
