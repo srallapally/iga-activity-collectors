@@ -111,8 +111,9 @@ class GoogleWorkspaceReportsCollector(DeclarativeMappedCollector):
 
     def _activity_to_records(self, item: dict[str, Any]) -> Iterator[dict[str, Any]]:
         actor = item.get("actor") or {}
-        user = actor.get("email")
-        if not user:
+        # profileId is the immutable Google account identifier; email is mutable.
+        actor_id = actor.get("profileId") or actor.get("email")
+        if not actor_id:
             return
 
         item_id = item.get("id") or {}
@@ -125,7 +126,7 @@ class GoogleWorkspaceReportsCollector(DeclarativeMappedCollector):
             if not event_name:
                 continue
             yield {
-                "user": user,
+                "actor_id": actor_id,
                 "action": event_name,
                 "applicationName": item_id.get("applicationName") or self._application_name,
                 "time": event_time,

@@ -169,6 +169,8 @@ class ADCollector(DeclarativeMappedCollector):
                     data[name] = d.text or ""
 
         return {
+            "TargetSid": data.get("TargetSid") or data.get("TargetUserSid"),
+            "SubjectUserSid": data.get("SubjectUserSid"),
             "TargetUserName": data.get("TargetUserName"),
             "SubjectUserName": data.get("SubjectUserName"),
             "ObjectName": data.get("ObjectName"),

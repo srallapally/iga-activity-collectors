@@ -3,7 +3,10 @@
   "event_type": "resource_access",
   "fields": {
     "_native_actor_id": {
-      "source_path": "caller",
+      "source_path": [
+        "claims.oid",
+        "caller"
+      ],
       "required": true
     },
     "_event_time": {

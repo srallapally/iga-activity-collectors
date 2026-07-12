@@ -3,7 +3,7 @@
   "event_type": "authentication",
   "fields": {
     "_native_actor_id": {
-      "source_path": "user",
+      "source_path": "actor_id",
       "required": true
     },
     "_event_time": {

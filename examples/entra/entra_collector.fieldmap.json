@@ -4,8 +4,8 @@
   "fields": {
     "_native_actor_id": {
       "source_path": [
-        "initiatedBy.user.userPrincipalName",
-        "initiatedBy.servicePrincipal.displayName"
+        "initiatedBy.user.id",
+        "initiatedBy.servicePrincipal.id"
       ],
       "required": true
     },

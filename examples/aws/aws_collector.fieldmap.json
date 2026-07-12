@@ -3,7 +3,7 @@
   "event_type": "resource_access",
   "fields": {
     "_native_actor_id": {
-      "source_path": "Username",
+      "source_path": "CloudTrailEvent.$json.userIdentity.principalId",
       "required": true
     },
     "_event_time": {
@@ -20,7 +20,10 @@
       "default": "unknown"
     },
     "resource.resource_name": {
-      "source_path": ["Resources[0].ResourceName", "EventSource"],
+      "source_path": [
+        "Resources[0].ResourceName",
+        "EventSource"
+      ],
       "default": "unknown_resource"
     },
     "environment.source_ip": {
