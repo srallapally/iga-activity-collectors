@@ -34,7 +34,7 @@ from iga_collectors.config import (
     build_uploader,
     load_config,
 )
-from iga_collectors.discovery import discover_collector_files, run_all
+from iga_collectors.discovery import discover_collector_files, load_collectors, run_all, run_and_upload
 
 logger = logging.getLogger("iga_collectors")
 
@@ -53,6 +53,11 @@ def main() -> int:
         "--list",
         action="store_true",
         help="List discovered collectors in COLLECTORS_DIR and exit.",
+    )
+    parser.add_argument(
+        "--collector",
+        metavar="NAME",
+        help="Run only the named collector from COLLECTORS_DIR.",
     )
     args = parser.parse_args()
 
@@ -91,6 +96,22 @@ def main() -> int:
 
     uploader = build_uploader(config)
     base_config = build_collector_base_config(config)
+
+    if args.collector:
+        stems = {p.stem for p in discovered}
+        if args.collector not in stems:
+            logger.error(
+                "no collector named %r in %s — use --list to see available collectors",
+                args.collector, config.collectors_dir,
+            )
+            return 1
+        collectors = load_collectors(config.collectors_dir, base_config)
+        if args.collector not in collectors:
+            logger.error("collector %r was found but failed to load", args.collector)
+            return 1
+        count = run_and_upload(collectors[args.collector], uploader)
+        logger.info("%s: %d event(s) uploaded", args.collector, count)
+        return 0
 
     results = run_all(config.collectors_dir, base_config, uploader)
 
