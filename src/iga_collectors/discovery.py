@@ -52,6 +52,7 @@ import importlib.util
 import json
 import logging
 import sys
+from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, Iterable
@@ -63,6 +64,15 @@ logger = logging.getLogger(__name__)
 
 ENTRY_POINT_NAME = "create_collector"
 DEFAULT_BATCH_SIZE = 100
+
+
+@dataclass
+class RunSummary:
+    """Returned by run_all(); gives __main__ all counts it needs for the
+    per-run summary log line without having to re-derive them."""
+    results: dict[str, int] = field(default_factory=dict)   # name → events uploaded
+    skipped: int = 0                                          # disabled in config
+    failed: set[str] = field(default_factory=set)            # loaded but errored during run
 
 
 class CollectorLoadError(Exception):
@@ -141,20 +151,23 @@ def load_collector_factory(path: Path) -> Callable[[dict[str, Any]], BaseCollect
 
 def load_collectors(
     directory: Path, base_config: dict[str, Any]
-) -> dict[str, BaseCollector]:
+) -> tuple[dict[str, BaseCollector], int]:
     """
     Import every collector file in directory and instantiate it via its
     create_collector(config), where config is base_config merged with
     that collector's own sibling {stem}.json (see _load_collector_config).
-    Returns {file_stem: BaseCollector instance}, only for files that
-    loaded and instantiated successfully; failures are logged and skipped.
+    Returns ({file_stem: BaseCollector}, skipped_count) where skipped_count
+    is the number of collectors that were disabled in their config.
+    Load failures are logged and excluded from both values.
     """
     collectors: dict[str, BaseCollector] = {}
+    skipped = 0
     for path in discover_collector_files(directory):
         try:
             config = _load_collector_config(path, base_config)
             if not config.get("enabled", True):
                 logger.info("skipping %s: disabled in config", path.name)
+                skipped += 1
                 continue
             factory = load_collector_factory(path)
             collector = factory(config)
@@ -174,7 +187,7 @@ def load_collectors(
 
         collectors[path.stem] = collector
 
-    return collectors
+    return collectors, skipped
 
 
 def _batched(
@@ -210,20 +223,22 @@ def run_all(
     base_config: dict[str, Any],
     uploader: ActivityUploader,
     batch_size: int = DEFAULT_BATCH_SIZE,
-) -> dict[str, int]:
+) -> RunSummary:
     """
     Discover and run every collector in directory. Each collector's
     create_collector(config) receives base_config merged with its own
     sibling {stem}.json, if one exists (see _load_collector_config). Each
     collector's failure is isolated: one collector erroring doesn't stop
-    the others. Returns {collector_name: events_uploaded} for collectors
-    that ran without error; failed collectors are logged and omitted from
-    the result.
+    the others. Returns a RunSummary with per-collector event counts,
+    the number of disabled collectors skipped, and the set of collector
+    names that failed during run/upload.
     """
-    results: dict[str, int] = {}
-    for name, collector in load_collectors(directory, base_config).items():
+    summary = RunSummary()
+    collectors, summary.skipped = load_collectors(directory, base_config)
+    for name, collector in collectors.items():
         try:
-            results[name] = run_and_upload(collector, uploader, batch_size)
+            summary.results[name] = run_and_upload(collector, uploader, batch_size)
         except Exception:
             logger.exception("collector %s failed during run/upload", name)
-    return results
+            summary.failed.add(name)
+    return summary

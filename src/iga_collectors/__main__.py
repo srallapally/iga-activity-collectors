@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import sys
+import time
 from pathlib import Path
 
 from iga_collectors.config import (
@@ -36,16 +37,12 @@ from iga_collectors.config import (
     load_config,
 )
 from iga_collectors.discovery import discover_collector_files, load_collectors, run_all, run_and_upload
+from iga_collectors.logging_setup import configure_logging
 
 logger = logging.getLogger("iga_collectors")
 
 
 def main() -> int:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    )
-
     parser = argparse.ArgumentParser(
         prog="iga-collectors",
         description="Discover and run IGA activity collectors.",
@@ -91,8 +88,11 @@ def main() -> int:
     try:
         config = load_config()
     except ConfigError as exc:
+        configure_logging()
         logger.error("configuration error: %s", exc)
         return 1
+
+    configure_logging(config.log_level, config.log_format)
 
     try:
         discovered = discover_collector_files(config.collectors_dir)
@@ -128,27 +128,36 @@ def main() -> int:
                     return 1
             except (OSError, json.JSONDecodeError):
                 pass
-        collectors = load_collectors(config.collectors_dir, base_config)
+        collectors, _ = load_collectors(config.collectors_dir, base_config)
         if args.collector not in collectors:
             logger.error("collector %r was found but failed to load", args.collector)
             return 1
+        t0 = time.monotonic()
         count = run_and_upload(collectors[args.collector], uploader)
-        logger.info("%s: %d event(s) uploaded", args.collector, count)
+        logger.info(
+            "run_complete collectors_run=1 collectors_skipped=0 collectors_failed=0 "
+            "events_uploaded=%d duration_s=%.1f",
+            count, time.monotonic() - t0,
+        )
         return 0
 
-    results = run_all(config.collectors_dir, base_config, uploader)
+    t0 = time.monotonic()
+    summary = run_all(config.collectors_dir, base_config, uploader)
+    duration = time.monotonic() - t0
 
-    total_events = sum(results.values())
+    total_events = sum(summary.results.values())
     logger.info(
-        "run complete: %d/%d collector(s) succeeded, %d event(s) uploaded",
-        len(results), len(discovered), total_events,
+        "run_complete collectors_run=%d collectors_skipped=%d collectors_failed=%d "
+        "events_uploaded=%d duration_s=%.1f",
+        len(summary.results), summary.skipped, len(summary.failed),
+        total_events, duration,
     )
-    for name, count in sorted(results.items()):
-        logger.info("  %s: %d event(s)", name, count)
 
-    if len(results) < len(discovered):
-        failed = {p.stem for p in discovered} - set(results)
-        logger.warning("collector(s) did not complete successfully: %s", ", ".join(sorted(failed)))
+    if summary.failed:
+        logger.warning(
+            "collector(s) did not complete successfully: %s",
+            ", ".join(sorted(summary.failed)),
+        )
         return 2
 
     return 0
