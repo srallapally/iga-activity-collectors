@@ -3,23 +3,36 @@
 Scans COLLECTORS_DIR (external, not part of this repo) for collector
 modules and runs them, uploading their output via ActivityUploader.
 
-Discovery contract: each discoverable .py file must define a module-level
+Discovery contract: each collector lives in its own subdirectory under
+COLLECTORS_DIR. The subdirectory contains:
+  - <name>.py          the collector module (must define create_collector)
+  - <name>.fieldmap.json  declarative field mapping (for DeclarativeMappedCollector)
+  - <name>.json        per-collector credentials and config (optional)
 
-    def create_collector(config: dict) -> BaseCollector: ...
+Example layout:
+  COLLECTORS_DIR/
+    okta/
+      okta_collector.py
+      okta_collector.fieldmap.json
+      okta_collector.json
+    entra/
+      entra_collector.py
+      entra_collector.fieldmap.json
+      entra_collector.json
 
 Files starting with "_" are skipped (lets customers keep shared helper
-modules alongside real collectors in the same directory). A file that
-defines no create_collector, or whose create_collector raises, is skipped
-with a logged warning rather than aborting discovery of the rest — one
-broken customer collector shouldn't block the others, same as SailPoint
-running each activity data source as a separate aggregation task.
+modules in a subdirectory). A file that defines no create_collector, or
+whose create_collector raises, is skipped with a logged warning rather than
+aborting discovery of the rest — one broken customer collector shouldn't
+block the others, same as SailPoint running each activity data source as a
+separate aggregation task.
 
 Per-collector configuration: each collector needs its own credential bag
 (an Entra tenant/client/secret, AWS keys, an Okta API token, ...) that has
 nothing to do with any other collector's, and nothing to do with the
 IGA-upload-side Config in config.py. Convention: a collector at
-COLLECTORS_DIR/foo_collector.py may have a sibling
-COLLECTORS_DIR/foo_collector.json holding exactly its own settings as a
+COLLECTORS_DIR/foo/foo_collector.py may have a sibling
+COLLECTORS_DIR/foo/foo_collector.json holding exactly its own settings as a
 flat JSON object. That file is optional — a collector needing no extra
 config (e.g. one reading purely from environment variables itself) simply
 has none. What every collector actually receives is base_config (shared
@@ -61,7 +74,7 @@ def discover_collector_files(directory: Path) -> list[Path]:
         raise NotADirectoryError(
             f"COLLECTORS_DIR does not exist or is not a directory: {directory}"
         )
-    return sorted(p for p in directory.glob("*.py") if not p.name.startswith("_"))
+    return sorted(p for p in directory.glob("*/*.py") if not p.name.startswith("_"))
 
 
 def _collector_config_path(collector_file: Path) -> Path:

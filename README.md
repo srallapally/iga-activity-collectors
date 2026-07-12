@@ -96,6 +96,22 @@ If the name is not found, the error message includes a hint to use `--list`:
 ERROR: no collector named 'okta_collector' in /path/to/collectors — use --list to see available collectors
 ```
 
+### COLLECTORS_DIR layout
+
+Each collector lives in its own subdirectory. Copy the three files from `examples/<name>/` into your `COLLECTORS_DIR`:
+
+```
+COLLECTORS_DIR/
+  okta/
+    okta_collector.py
+    okta_collector.fieldmap.json
+    okta_collector.json          # credentials and config
+  entra/
+    entra_collector.py
+    entra_collector.fieldmap.json
+    entra_collector.json
+```
+
 ### Docker (one-shot)
 
 ```bash
