@@ -20,11 +20,13 @@ jdbc = ["JayDeBeApi>=1.2"]
 kafka = ["confluent-kafka>=2.0"]
 google = ["google-auth>=2.0"]
 aws = ["boto3>=1.28"]
+windows = ["python-evtx>=0.7"]
 all-collectors = [
     "JayDeBeApi>=1.2",
     "confluent-kafka>=2.0",
     "google-auth>=2.0",
     "boto3>=1.28",
+    "python-evtx>=0.7",
 ]
 
 [project.scripts]
