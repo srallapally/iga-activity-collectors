@@ -153,6 +153,9 @@ def load_collectors(
     for path in discover_collector_files(directory):
         try:
             config = _load_collector_config(path, base_config)
+            if not config.get("enabled", True):
+                logger.info("skipping %s: disabled in config", path.name)
+                continue
             factory = load_collector_factory(path)
             collector = factory(config)
         except CollectorLoadError as exc:

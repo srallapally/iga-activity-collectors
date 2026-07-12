@@ -1,4 +1,5 @@
 {
+  "enabled": false,
   "aws_region": "us-east-1",
   "aws_access_key_id": "REPLACE_ME",
   "aws_secret_access_key": "REPLACE_ME",

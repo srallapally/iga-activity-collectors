@@ -23,6 +23,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -75,7 +76,16 @@ def main() -> int:
             print("No collectors found in", collectors_dir_str)
         else:
             for p in files:
-                print(p.stem)
+                label = p.stem
+                config_path = p.with_suffix(".json")
+                if config_path.exists():
+                    try:
+                        cfg = json.loads(config_path.read_text())
+                        if not cfg.get("enabled", True):
+                            label += "  [disabled]"
+                    except (OSError, json.JSONDecodeError):
+                        pass
+                print(label)
         return 0
 
     try:
@@ -105,6 +115,19 @@ def main() -> int:
                 args.collector, config.collectors_dir,
             )
             return 1
+        collector_path = next(p for p in discovered if p.stem == args.collector)
+        config_path = collector_path.with_suffix(".json")
+        if config_path.exists():
+            try:
+                cfg = json.loads(config_path.read_text())
+                if not cfg.get("enabled", True):
+                    logger.error(
+                        "collector %r is disabled — set \"enabled\": true in %s to run it",
+                        args.collector, config_path.name,
+                    )
+                    return 1
+            except (OSError, json.JSONDecodeError):
+                pass
         collectors = load_collectors(config.collectors_dir, base_config)
         if args.collector not in collectors:
             logger.error("collector %r was found but failed to load", args.collector)

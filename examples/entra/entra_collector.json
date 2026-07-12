@@ -1,4 +1,5 @@
 {
+  "enabled": false,
   "entra_tenant_id": "REPLACE_ME",
   "entra_client_id": "REPLACE_ME",
   "entra_client_secret": "REPLACE_ME",

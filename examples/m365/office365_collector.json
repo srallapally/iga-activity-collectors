@@ -1,4 +1,5 @@
 {
+  "enabled": false,
   "o365_tenant_id": "REPLACE_ME",
   "o365_client_id": "REPLACE_ME",
   "o365_client_secret": "REPLACE_ME",

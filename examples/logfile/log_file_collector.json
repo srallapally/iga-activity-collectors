@@ -1,3 +1,4 @@
 {
+  "enabled": false,
   "log_file_path": "/var/log/example_app/activity.log"
 }
