@@ -61,47 +61,20 @@ pip install -e "."
 pip install -e ".[all-collectors]"
 ```
 
-### Run all collectors
-
-Discovers and runs every collector in `COLLECTORS_DIR`, uploads results, and exits:
-
-```bash
-iga-collectors
-# or
-python -m iga_collectors
-```
-
-### List deployed collectors
-
-Prints the name of each collector found in `COLLECTORS_DIR` without requiring IGA credentials.
-Collectors with `"enabled": false` in their config are shown with a `[disabled]` marker:
-
-```bash
-COLLECTORS_DIR=/path/to/collectors iga-collectors --list
-
-okta_collector  [disabled]
-entra_collector
-```
-
-### Run a specific collector
-
-Runs a single named collector instead of the full fleet:
-
-```bash
-iga-collectors --collector entra_collector
-```
-
-If the collector is disabled, a clear error is shown:
+### CLI reference
 
 ```
-ERROR: collector 'okta_collector' is disabled — set "enabled": true in okta_collector.json to run it
+iga-collectors [--list] [--collector NAME] [--dry-run] [--limit N]
 ```
 
-If the name is not found:
-
-```
-ERROR: no collector named 'okta_collector' in /path/to/collectors — use --list to see available collectors
-```
+| Flag | Requires IGA creds | Description |
+|---|---|---|
+| _(none)_ | Yes | Run all enabled collectors and upload |
+| `--list` | No | List collectors in `COLLECTORS_DIR` with enabled/disabled status |
+| `--collector NAME` | Yes | Run one named collector instead of all |
+| `--dry-run` | No | Poll and map events, print to stdout — skip upload entirely |
+| `--dry-run --collector NAME` | No | Dry run a single collector |
+| `--limit N` | — | Stop each collector after N events; works with or without `--dry-run` |
 
 ### COLLECTORS_DIR layout
 
@@ -121,11 +94,45 @@ COLLECTORS_DIR/
 
 All example `.json` configs ship with `"enabled": false`. A collector that has no `.json` config, or whose config omits `"enabled"`, is treated as enabled.
 
+### List deployed collectors
+
+Prints each collector with a `[disabled]` marker for unconfigured ones. Does not require IGA credentials:
+
+```bash
+COLLECTORS_DIR=/path/to/collectors iga-collectors --list
+okta_collector  [disabled]
+entra_collector
+```
+
+### Run all collectors
+
+Discovers and runs every enabled collector in `COLLECTORS_DIR`, uploads results, and exits:
+
+```bash
+iga-collectors
+# or
+python -m iga_collectors
+```
+
+### Run a specific collector
+
+```bash
+iga-collectors --collector entra_collector
+```
+
+Error messages if something is wrong:
+
+```
+# Collector exists but is disabled:
+ERROR: collector 'okta_collector' is disabled — set "enabled": true in okta_collector.json to run it
+
+# Collector not found:
+ERROR: no collector named 'okta_collector' in /path/to/collectors — use --list to see available collectors
+```
+
 ### Test mode (dry run)
 
-`--dry-run` runs the full pipeline (poll → correlate → map) but prints events to stdout as JSON instead of uploading. **IGA credentials are not required.** Checkpoint state is never read or written — the collector always starts from its `initial_lookback_seconds` default.
-
-Use `--limit N` to cap output to the first N events per collector:
+`--dry-run` runs the full pipeline (poll → correlate → map) but prints events to stdout as JSON instead of uploading. **IGA credentials are not required.** Checkpoint state is never read or written — the run always starts from each collector's `initial_lookback_seconds` default.
 
 ```bash
 # Test one collector — print first 5 events, no IGA creds needed
@@ -136,7 +143,7 @@ COLLECTORS_DIR=/path/to/collectors \
 COLLECTORS_DIR=/path/to/collectors iga-collectors --dry-run --limit 10
 ```
 
-`--limit` is also usable on live runs to cap how many events are uploaded per collector:
+`--limit` also works on live runs to cap events uploaded per collector:
 
 ```bash
 iga-collectors --limit 100 --collector entra_collector
@@ -161,6 +168,8 @@ docker run --rm --env-file .env \
   iga-collectors
 ```
 
+`COLLECTORS_DIR=/collectors` and `CHECKPOINT_STORE_PATH=/state/checkpoint.json` are baked into the image — only override them if you mount to different paths.
+
 ### Scheduling
 
 The process is one-shot by design — it runs once and exits. Use an external scheduler:
@@ -172,8 +181,8 @@ The process is one-shot by design — it runs once and exits. Use an external sc
 
 | Code | Meaning |
 |------|---------|
-| `0` | All collectors succeeded |
-| `1` | Fatal error before any collector ran (bad config, missing `COLLECTORS_DIR`) |
+| `0` | All collectors succeeded (or dry run completed) |
+| `1` | Fatal error before any collector ran (bad config, missing `COLLECTORS_DIR`, disabled collector named explicitly) |
 | `2` | At least one collector failed; others may have succeeded |
 
 ## Configuration
