@@ -54,7 +54,80 @@ examples/              reference collectors (not auto-discovered from here)
 tests/                 unit tests + fixtures, including a fake COLLECTORS_DIR
 ```
 
+## Usage
+
+### Install
+
+```bash
+pip install -e "."
+# With all collector optional dependencies:
+pip install -e ".[all-collectors]"
+```
+
+### Run all collectors
+
+Discovers and runs every collector in `COLLECTORS_DIR`, uploads results, and exits:
+
+```bash
+iga-collectors
+# or
+python -m iga_collectors
+```
+
+### List deployed collectors
+
+Prints the name of each collector found in `COLLECTORS_DIR` without requiring IGA credentials:
+
+```bash
+COLLECTORS_DIR=/path/to/collectors iga-collectors --list
+```
+
+### Docker (one-shot)
+
+```bash
+docker build -t iga-collectors .
+docker run --rm --env-file .env \
+  -v /path/to/collectors:/collectors \
+  -v /path/to/state:/state \
+  iga-collectors
+```
+
+### Scheduling
+
+The process is one-shot by design — it runs once and exits. Use an external scheduler:
+
+- **cron**: `*/15 * * * * root /usr/local/bin/docker-run.sh`
+- **Kubernetes**: see `deployment/k8s-cronjob.yaml` (includes `concurrencyPolicy: Forbid` and a `PersistentVolumeClaim` for checkpoint state — both required for correctness)
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | All collectors succeeded |
+| `1` | Fatal error before any collector ran (bad config, missing `COLLECTORS_DIR`) |
+| `2` | At least one collector failed; others may have succeeded |
+
 ## Configuration
 
 Copy `.env.example` to `.env` and fill in real values before running any
 collector against a live IGA instance.
+
+### Required environment variables
+
+| Variable | Purpose |
+|---|---|
+| `IGA_PROTOCOL` | `https` or `http` |
+| `IGA_HOST` | IGA server hostname |
+| `IGA_PORT` | IGA server port |
+| `IGA_UPLOAD_PATH` | Upload endpoint path |
+| `IGA_TOKEN_URL` | OAuth2 token endpoint URL |
+| `IGA_CLIENT_ID` | OAuth2 client ID |
+| `IGA_CLIENT_SECRET` | OAuth2 client secret |
+| `COLLECTORS_DIR` | Path to directory containing collector `.py` files |
+| `CHECKPOINT_STORE_PATH` | Path to the checkpoint state file (must be on persistent storage) |
+
+### Optional
+
+| Variable | Purpose |
+|---|---|
+| `IGA_OAUTH_SCOPE` | OAuth2 scope string |
