@@ -30,7 +30,7 @@ COPY src ./src
 # add `librdkafka-dev gcc` to the apt-get install above before this step,
 # or this pip install will fail trying to build confluent-kafka from
 # source with no librdkafka headers available.
-RUN pip install --no-cache-dir ".[jdbc,kafka,google,aws]"
+RUN pip install --no-cache-dir ".[jdbc,kafka,google,aws,windows]"
 
 # --- Everything below is customer-provided at runtime, not baked in ---
 #
