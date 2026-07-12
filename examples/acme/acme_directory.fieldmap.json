@@ -1,0 +1,28 @@
+{
+  "source_system": "acme_directory",
+  "event_type": "authentication",
+  "fields": {
+    "_native_actor_id": {
+      "source_path": "actor.email",
+      "required": true
+    },
+    "_event_time": {
+      "source_path": "occurred_at",
+      "transform": "parse_iso8601",
+      "required": true
+    },
+    "action": {
+      "source_path": "type",
+      "required": true
+    },
+    "outcome": {
+      "source_path": "success",
+      "transform": "bool_to_outcome",
+      "default": "unknown"
+    },
+    "resource.resource_name": {
+      "source_path": "target.name",
+      "default": "unknown_resource"
+    }
+  }
+}

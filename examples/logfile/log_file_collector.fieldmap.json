@@ -1,0 +1,28 @@
+{
+  "source_system": "example_app_log",
+  "event_type": "resource_access",
+  "fields": {
+    "_native_actor_id": {
+      "source_path": "user",
+      "required": true
+    },
+    "_event_time": {
+      "source_path": "time",
+      "transform": "parse_iso8601",
+      "required": true
+    },
+    "action": {
+      "source_path": "action",
+      "required": true
+    },
+    "outcome": {
+      "source_path": "result",
+      "transform": "sailpoint_result_to_outcome",
+      "default": "unknown"
+    },
+    "resource.resource_name": {
+      "source_path": "target",
+      "default": "unknown_resource"
+    }
+  }
+}

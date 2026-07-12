@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a6d628ab-a959-4f0d-aeaf-43489655845d" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.dockerignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/iga-collectors.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/pyProjectModel.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/deployment/docker-run.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/deployment/k8s-cronjob.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/deployment/run-simple.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/writing_a_collector.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/acme/acme_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/acme/acme_directory.fieldmap.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/acme/acme_directory_collector.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/activedirectory/ad_collector.fieldmap.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/activedirectory/ad_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/activedirectory/ad_collector.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/aws/aws_collector.fieldmap.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/aws/aws_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/azure/azure_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/entra/entra_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/google_cloud/google_cloud_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/google_workspace/google_workspace_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/jaeger/jaeger_collector.fieldmap.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/jaeger/jaeger_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/jaeger/jaeger_collector.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/jdbc/jdbc_collector.fieldmap.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/jdbc/jdbc_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/logfile/log_file_collector.fieldmap.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/logfile/log_file_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/m365/office365_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/okta/okta_collector.fieldmap.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/okta/okta_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/otel/otel_collector.fieldmap.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/otel/otel_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/salesforce/salesforce_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/windows/windows_eventlog_collector.fieldmap.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/windows/windows_eventlog_collector.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/iga_collectors/field_mapping.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/iga_collectors/main.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_/Users/sanjay.rallapally/PycharmProjects/ActivityCollector" value="3GKq1LkFFjRQYQvs5NjRdiPPY3E" />
+    </persistenceIdMap>
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="47" />
+    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Dockerfile" />
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0" />
+      <entry key="S2" value="1.0" />
+      <entry key="S5" value="1.0" />
+      <entry key="S10" value="1.0" />
+      <entry key="S30" value="1.0" />
+      <entry key="S60" value="1.0" />
+      <entry key="M2" value="1.0" />
+      <entry key="M5" value="1.0" />
+      <entry key="M10" value="1.0" />
+      <entry key="M15" value="1.0" />
+      <entry key="M30" value="1.0" />
+      <entry key="H1" value="1.0" />
+      <entry key="H2" value="1.0" />
+      <entry key="H4" value="1.0" />
+      <entry key="D1" value="1.0" />
+      <entry key="W1" value="1.0" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="0.7120250977985358" />
+      <entry key="MS500" value="0.9343273468831804" />
+      <entry key="S2" value="0.9831612772403993" />
+      <entry key="S5" value="0.993230176832812" />
+      <entry key="S10" value="0.9966093401292264" />
+      <entry key="S30" value="0.9988685002342388" />
+      <entry key="S60" value="0.9994340899900497" />
+      <entry key="M2" value="0.9997170049519263" />
+      <entry key="M5" value="0.999886792368976" />
+      <entry key="M10" value="0.9999433945824013" />
+      <entry key="M15" value="0.9999622626989061" />
+      <entry key="M30" value="0.9999811311714367" />
+      <entry key="H1" value="0.9999905655412138" />
+      <entry key="H2" value="0.9999952827594807" />
+      <entry key="H4" value="0.9999976413769588" />
+      <entry key="D1" value="0.9999996068957735" />
+      <entry key="W1" value="0.9999999438422439" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3GKq1LkFFjRQYQvs5NjRdiPPY3E" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;SHELLCHECK.PATH&quot;: &quot;/Users/sanjay.rallapally/Library/Application Support/JetBrains/PyCharm2026.1/plugins/Shell Script/shellcheck&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/examples/unfinished" />
+      <recent name="$PROJECT_DIR$/examples/salesforce" />
+      <recent name="$PROJECT_DIR$/examples/otel" />
+      <recent name="$PROJECT_DIR$/examples/okta" />
+      <recent name="$PROJECT_DIR$/examples/m365" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-PY-261.26222.68" />
+        <option value="bundled-python-sdk-50341a9f1f9c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.26222.68" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a6d628ab-a959-4f0d-aeaf-43489655845d" name="Changes" comment="" />
+      <created>1783730392033</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1783730392033</updated>
+      <workItem from="1783730393078" duration="1301000" />
+      <workItem from="1783733167588" duration="9000" />
+      <workItem from="1783733193683" duration="112000" />
+      <workItem from="1783733314948" duration="658000" />
+      <workItem from="1783734003793" duration="6749000" />
+      <workItem from="1783818314839" duration="4286000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="dependencySupport" implementationName="executable:docker" />
+    <option featureType="dependencySupport" implementationName="executable:kubectl" />
+    <option featureType="dependencySupport" implementationName="executable:az" />
+    <option featureType="dependencySupport" implementationName="executable:terraform" />
+    <option featureType="dependencySupport" implementationName="python:confluent-kafka" />
+  </component>
+</project>

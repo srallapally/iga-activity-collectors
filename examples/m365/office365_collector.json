@@ -1,0 +1,7 @@
+{
+  "o365_tenant_id": "REPLACE_ME",
+  "o365_client_id": "REPLACE_ME",
+  "o365_client_secret": "REPLACE_ME",
+  "o365_content_type": "Audit.Exchange",
+  "o365_initial_lookback_seconds": 3600
+}

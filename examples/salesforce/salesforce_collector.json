@@ -1,0 +1,7 @@
+{
+  "salesforce_instance_url": "https://REPLACE_ME.my.salesforce.com",
+  "salesforce_client_id": "REPLACE_ME",
+  "salesforce_client_secret": "REPLACE_ME",
+  "salesforce_api_version": "62.0",
+  "salesforce_initial_lookback_seconds": 86400
+}

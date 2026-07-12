@@ -1,0 +1,6 @@
+{
+  "entra_tenant_id": "REPLACE_ME",
+  "entra_client_id": "REPLACE_ME",
+  "entra_client_secret": "REPLACE_ME",
+  "entra_initial_lookback_seconds": 3600
+}

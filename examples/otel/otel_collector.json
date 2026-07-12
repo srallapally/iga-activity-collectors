@@ -1,0 +1,5 @@
+{
+  "kafka_bootstrap_servers": "kafka.example.com:9092",
+  "otel_kafka_topic": "otel-traces",
+  "otel_kafka_group_id": "iga-nhi-collector"
+}

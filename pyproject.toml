@@ -1,0 +1,38 @@
+[project]
+name = "iga-collectors"
+version = "0.1.0"
+description = "Activity collector framework: read source activity, correlate identities, upload to IGA governance activity API"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+# The framework itself (src/iga_collectors/) only needs requests. These
+# extras exist purely as an installation convenience for customers using
+# the reference collectors in examples/ -- that code isn't part of the
+# installed package (it's meant to be copied into an external
+# COLLECTORS_DIR), so these dependencies aren't required by default.
+jdbc = ["JayDeBeApi>=1.2"]
+kafka = ["confluent-kafka>=2.0"]
+google = ["google-auth>=2.0"]
+aws = ["boto3>=1.28"]
+all-collectors = [
+    "JayDeBeApi>=1.2",
+    "confluent-kafka>=2.0",
+    "google-auth>=2.0",
+    "boto3>=1.28",
+]
+
+[project.scripts]
+iga-collectors = "iga_collectors.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

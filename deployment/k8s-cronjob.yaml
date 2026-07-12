@@ -1,0 +1,113 @@
+# deployment/k8s-cronjob.yaml
+#
+# Example Kubernetes CronJob for iga-collectors. Two things here are
+# correctness requirements, not just good practice -- flagged inline
+# below, not left implicit:
+#   1. concurrencyPolicy: Forbid -- base.CheckpointStore does an
+#      unbuffered read-modify-write on one JSON file with no locking.
+#      Two overlapping runs writing to it concurrently is a real race,
+#      not a theoretical one.
+#   2. The checkpoint file lives on a PersistentVolumeClaim, not the
+#      pod's ephemeral filesystem -- CronJob pods are torn down after
+#      each run; without a PVC, every run looks like a first run to
+#      every collector.
+#
+# Known limitation of this setup, not solved here: Kubernetes only
+# distinguishes exit code 0 (Job succeeded) from non-zero (Job failed).
+# It cannot tell exit code 1 (nothing ran) apart from exit code 2 (mostly
+# worked, one collector failed) -- both show as a failed Job in kubectl
+# and any dashboard reading Job status. Getting that distinction into
+# your monitoring means parsing pod logs or emitting a metric from
+# __main__.py, not a Kubernetes-native feature.
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: iga-collectors-env
+type: Opaque
+stringData:
+  IGA_PROTOCOL: "https"
+  IGA_HOST: "openam-xxx.forgeblocks.com"
+  IGA_PORT: "443"
+  IGA_UPLOAD_PATH: "/iga/governance/activity"
+  IGA_TOKEN_URL: "https://openam-xxx.forgeblocks.com/oauth2/access_token"
+  IGA_CLIENT_ID: "REPLACE_ME"
+  IGA_CLIENT_SECRET: "REPLACE_ME"
+---
+# Holds both your collector .py files (not sensitive) and their sibling
+# .json configs (which ARE sensitive -- see discovery.py's per-collector
+# config convention). Using one Secret for both, rather than splitting
+# code into a ConfigMap and configs into a Secret, is a simplification:
+# it means redeploying this Secret every time collector code changes,
+# which is fine for a handful of files but gets awkward fast. If your
+# collector code changes often, use a PersistentVolumeClaim populated by
+# your own CI/CD instead -- that's a better fit than editing this file
+# per change, just not shown here since it depends on your deployment
+# tooling.
+#
+# Note: Kubernetes Secrets have a 1MiB total size limit (etcd
+# constraint). Fine for a handful of collector files; will not scale to
+# dozens of large ones.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: iga-collectors-files
+type: Opaque
+stringData:
+  entra_collector.py: |
+    # paste your collector file's contents here
+  entra_collector.json: |
+    {"entra_tenant_id": "REPLACE_ME", "entra_client_id": "REPLACE_ME", "entra_client_secret": "REPLACE_ME"}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: iga-collectors-checkpoint-state
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: iga-collectors
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid   # see correctness note at top of file
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 2   # retry transient failures (network blips etc.);
+                         # a genuinely broken credential will just fail
+                         # again -- alert on failedJobsHistoryLimit, not
+                         # on retries succeeding
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: iga-collectors
+              image: iga-collectors:latest
+              envFrom:
+                - secretRef:
+                    name: iga-collectors-env
+              env:
+                - name: COLLECTORS_DIR
+                  value: /collectors
+                - name: CHECKPOINT_STORE_PATH
+                  value: /state/checkpoints.json
+              volumeMounts:
+                - name: collectors
+                  mountPath: /collectors
+                  readOnly: true
+                - name: checkpoint-state
+                  mountPath: /state
+          volumes:
+            - name: collectors
+              secret:
+                secretName: iga-collectors-files
+            - name: checkpoint-state
+              persistentVolumeClaim:
+                claimName: iga-collectors-checkpoint-state

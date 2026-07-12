@@ -1,0 +1,26 @@
+{
+  "source_system": "entra_id",
+  "event_type": "authentication",
+  "fields": {
+    "_native_actor_id": {
+      "source_path": "userPrincipalName",
+      "required": true
+    },
+    "_event_time": {
+      "source_path": "createdDateTime",
+      "transform": "parse_iso8601",
+      "required": true
+    },
+    "action": {
+      "literal": "SignIn"
+    },
+    "outcome": {
+      "source_path": "status.errorCode",
+      "transform": "graph_signin_error_code_to_outcome"
+    },
+    "resource.resource_name": {
+      "source_path": "appDisplayName",
+      "default": "unknown_app"
+    }
+  }
+}

@@ -1,0 +1,1106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ActivityLogEvent",
+  "description": "Canonical activity log schema — supports IGA agent governance detection and multi-hop chain reconstruction across agent platforms and intermediary infrastructure.",
+  "version": "4.0.0",
+  "type": "object",
+  "required": [
+    "id",
+    "schema_version",
+    "actor_global_id",
+    "event_id",
+    "event_time",
+    "event_type",
+    "action",
+    "outcome"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "actor_global_id": {
+      "type": "string",
+      "description": "IGA NHI or identity object reference (UUID)."
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "event_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "authentication",
+        "resource_access",
+        "tool_invocation",
+        "knowledge_base_query",
+        "guardrail_evaluation",
+        "agent_invocation",
+        "token_issuance",
+        "policy_evaluation",
+        "secret_access",
+        "workload_attestation",
+        "authz_decision"
+      ],
+      "description": "authentication and resource_access are the base human-identity event types. tool_invocation, knowledge_base_query, guardrail_evaluation, agent_invocation, token_issuance, and policy_evaluation are agent-platform event types. secret_access covers any credential/secret retrieval from a secrets store (Vault, Key Vault, Secrets Manager, CyberArk). workload_attestation covers a workload proving its identity to a trust authority prior to credential issuance (SPIFFE/SPIRE, cloud metadata service, HSM). authz_decision covers a policy enforcement point decision on a request in transit (API gateway, service mesh PDP, OPA, PingAuthorize) — distinct from agent-internal policy_evaluation."
+    },
+    "action": {
+      "type": "string",
+      "description": "Raw source action token."
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "success",
+        "failure",
+        "partial",
+        "unknown"
+      ]
+    },
+    "object_type": {
+      "type": "string"
+    },
+    "object_id": {
+      "type": "string"
+    },
+    "actor": {
+      "type": "object",
+      "description": "The identity that performed this event. For agent events this is the invoking principal (human, service, or orchestrating agent), not the agent itself. The agent is in agent_context.",
+      "properties": {
+        "actor_type": {
+          "type": "string"
+        },
+        "actor_id": {
+          "type": "string",
+          "description": "Required for ingestion-valid events."
+        },
+        "actor_global_id": {
+          "type": "string",
+          "description": "IGA NHI object reference (UUID). Duplicated here for event-level joins without top-level field access."
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "aliases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "owner_id": {
+          "type": "string"
+        },
+        "owner_global_id": {
+          "type": "string",
+          "description": "IGA object reference for the owning human identity."
+        },
+        "actor_class": {
+          "type": "string",
+          "enum": [
+            "human",
+            "machine",
+            "device",
+            "unknown"
+          ]
+        },
+        "actor_subtype": {
+          "type": "string",
+          "enum": [
+            "employee",
+            "contractor",
+            "customer",
+            "service_account",
+            "service_principal",
+            "managed_identity",
+            "workload_identity",
+            "oauth_client",
+            "api_key",
+            "api_token",
+            "bot",
+            "agent_runtime",
+            "mcp_server",
+            "device_identity",
+            "system_process",
+            "unknown"
+          ],
+          "description": "mcp_server added v3.0.0: covers MCP tool servers acting as the caller in their own log records."
+        },
+        "actor_status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled",
+            "deleted",
+            "suspended",
+            "unknown"
+          ]
+        },
+        "owner_status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "disabled",
+            "deleted",
+            "suspended",
+            "unresolved",
+            "unknown"
+          ]
+        },
+        "is_interactive": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "approval_status": {
+          "type": "string",
+          "enum": [
+            "approved",
+            "unapproved",
+            "exception_approved",
+            "unknown"
+          ]
+        },
+        "source_identity_provider": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "agent_context": {
+      "type": "object",
+      "description": "Populated only for agent event_types: tool_invocation, knowledge_base_query, guardrail_evaluation, agent_invocation. Null for non-agent events.",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "description": "Platform-native agent identifier."
+        },
+        "agent_global_id": {
+          "type": "string",
+          "description": "IGA NHI object reference (UUID) for the agent itself."
+        },
+        "agent_name": {
+          "type": "string"
+        },
+        "agent_type": {
+          "type": "string",
+          "enum": [
+            "copilot_studio",
+            "bedrock_agent",
+            "vertex_agent",
+            "foundry_agent",
+            "unknown"
+          ]
+        },
+        "agent_version": {
+          "type": "string"
+        },
+        "agent_lifecycle_state": {
+          "type": "string",
+          "enum": [
+            "active",
+            "dormant",
+            "suspended",
+            "deprovisioned",
+            "unknown"
+          ],
+          "description": "Denormalized from IGA NHI object at ingest for single-event dormancy detection."
+        },
+        "orchestrating_agent_id": {
+          "type": "string",
+          "description": "Platform-native ID of the parent agent for A2A invocations."
+        },
+        "orchestrating_agent_global_id": {
+          "type": "string",
+          "description": "IGA NHI object reference of the parent agent."
+        },
+        "delegation_chain": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Ordered array of actor_global_ids from invoker to agent. Supports multi-hop A2A."
+        },
+        "tool_id": {
+          "type": "string"
+        },
+        "tool_name": {
+          "type": "string"
+        },
+        "tool_type": {
+          "type": "string",
+          "enum": [
+            "action_group",
+            "power_platform_connector",
+            "mcp_tool",
+            "function",
+            "knowledge_base",
+            "unknown"
+          ]
+        },
+        "tool_credential_id": {
+          "type": "string",
+          "description": "Identity binding used for this tool call."
+        },
+        "tool_credential_type": {
+          "type": "string",
+          "enum": [
+            "iam_role",
+            "service_principal",
+            "delegated_oauth",
+            "api_key",
+            "managed_identity",
+            "unknown"
+          ]
+        },
+        "delegated_principal_global_id": {
+          "type": "string",
+          "description": "IGA object ref when tool executed under delegated human identity (e.g. Copilot delegated OAuth)."
+        },
+        "downstream_system": {
+          "type": "string",
+          "description": "Primary system called by the tool beyond the function boundary. Scalar — represents the intended downstream. For full multi-hop chain use correlation_context.chain_id to join downstream event records."
+        },
+        "downstream_resource": {
+          "type": "string"
+        },
+        "downstream_operation": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "UNKNOWN"
+          ]
+        },
+        "records_read": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "records_written": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sensitive_data_detected": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "sensitive_data_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "knowledge_base_id": {
+          "type": "string"
+        },
+        "knowledge_base_type": {
+          "type": "string",
+          "enum": [
+            "bedrock_kb",
+            "sharepoint",
+            "dataverse",
+            "custom",
+            "unknown"
+          ]
+        },
+        "query_top_k": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "guardrail_id": {
+          "type": "string"
+        },
+        "guardrail_type": {
+          "type": "string",
+          "enum": [
+            "bedrock_guardrail",
+            "power_platform_dlp",
+            "copilot_content_safety",
+            "custom",
+            "unknown"
+          ]
+        },
+        "guardrail_evaluation_phase": {
+          "type": "string",
+          "enum": [
+            "input",
+            "output"
+          ]
+        },
+        "guardrail_action": {
+          "type": "string",
+          "enum": [
+            "block",
+            "redact",
+            "allow",
+            "block_tool_use",
+            "unknown"
+          ]
+        },
+        "guardrail_reason_code": {
+          "type": "string",
+          "description": "Structured reason code — not free text."
+        },
+        "guardrail_redacted_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "invocation_phase": {
+          "type": "string",
+          "enum": [
+            "started",
+            "completed"
+          ]
+        },
+        "channel_type": {
+          "type": "string",
+          "enum": [
+            "teams",
+            "web",
+            "api",
+            "scheduled_flow",
+            "agent_orchestrator",
+            "unknown"
+          ]
+        },
+        "prompt_category": {
+          "type": "string",
+          "description": "Declared intent category — not raw prompt text."
+        },
+        "input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "output_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tool_calls_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "knowledge_base_queries_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "guardrail_actions_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "session_duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "auth_context": {
+      "type": "object",
+      "description": "Authentication and token context.",
+      "properties": {
+        "auth_method": {
+          "type": "string"
+        },
+        "auth_protocol": {
+          "type": "string"
+        },
+        "auth_strength": {
+          "type": "string"
+        },
+        "mfa_used": {
+          "type": "boolean"
+        },
+        "mfa_factor": {
+          "type": "string"
+        },
+        "idp_provider": {
+          "type": "string",
+          "description": "Free string — vendor-agnostic. Use canonical names where possible (e.g. ping_federate, ping_one, microsoft_entra_id, okta, auth0)."
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "token_claims": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "execution_mode": {
+          "type": "string",
+          "enum": [
+            "interactive",
+            "non_interactive",
+            "delegated",
+            "unknown"
+          ]
+        },
+        "grant_type": {
+          "type": "string",
+          "enum": [
+            "authorization_code",
+            "client_credentials",
+            "device_code",
+            "refresh_token",
+            "token_exchange",
+            "password",
+            "saml_bearer",
+            "jwt_bearer",
+            "workload_identity",
+            "managed_identity",
+            "api_key",
+            "certificate",
+            "session_cookie",
+            "unknown"
+          ]
+        },
+        "token_type": {
+          "type": "string",
+          "enum": [
+            "access_token",
+            "id_token",
+            "refresh_token",
+            "session_cookie",
+            "api_key",
+            "certificate",
+            "saml_assertion",
+            "jwt",
+            "opaque_token",
+            "svid_x509",
+            "svid_jwt",
+            "unknown"
+          ],
+          "description": "svid_x509 and svid_jwt added v3.0.0 for SPIFFE workload identity token types."
+        },
+        "credential_type": {
+          "type": "string",
+          "enum": [
+            "password",
+            "client_secret",
+            "certificate",
+            "managed_identity",
+            "workload_federation",
+            "spiffe_svid",
+            "api_key",
+            "session_cookie",
+            "bearer_token",
+            "unknown"
+          ],
+          "description": "spiffe_svid added v3.0.0 for SPIFFE workload identity credentials."
+        },
+        "delegation_type": {
+          "type": "string",
+          "enum": [
+            "none",
+            "user_delegated",
+            "app_only",
+            "on_behalf_of",
+            "impersonation",
+            "unknown"
+          ],
+          "description": "on_behalf_of and impersonation yield delegated."
+        },
+        "client_id": {
+          "type": "string"
+        },
+        "tenant_id": {
+          "type": "string"
+        },
+        "issuer": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "subject_type": {
+          "type": "string",
+          "enum": [
+            "user",
+            "app",
+            "service_principal",
+            "device",
+            "workload",
+            "unknown"
+          ],
+          "description": "workload added v3.0.0 for SPIFFE and non-cloud-platform workload identities."
+        },
+        "spiffe_id": {
+          "type": "string",
+          "description": "Added v3.0.0. SPIFFE ID URI of the workload (e.g. spiffe://trust-domain/path). Populated on workload_attestation and token_issuance events involving SPIFFE/SPIRE. Carries the workload's verifiable identity independent of platform-specific credential types."
+        },
+        "trust_domain": {
+          "type": "string",
+          "description": "Added v3.0.0. SPIFFE trust domain extracted from spiffe_id. Present as a standalone field to enable trust-domain-scoped queries without string parsing."
+        },
+        "attestation_type": {
+          "type": "string",
+          "enum": [
+            "k8s_sat",
+            "aws_iid",
+            "gcp_iit",
+            "azure_msi",
+            "tpm",
+            "x509_pop",
+            "join_token",
+            "unknown"
+          ],
+          "description": "Added v3.0.0. Workload attestation method used by SPIRE or equivalent trust authority. Populated on workload_attestation events."
+        },
+        "requested_scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Added v3.0.0. Scopes the client requested. Compare against issued_scopes to detect scope escalation or unexpected downgrade. Populated on token_issuance events."
+        },
+        "issued_scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Renamed from scopes in v3.0.0. Scopes present in the issued token. Renamed for clarity when paired with requested_scopes."
+        },
+        "token_jti": {
+          "type": "string",
+          "description": "Added v3.0.0. JWT ID claim (jti) — the per-token unique identifier. Present on JWT-format tokens. Primary join key for correlating a token_issuance event (IdP log) with a resource_access or authz_decision event (gateway or resource log) that presents the same token. Without this field, cross-source chain reconstruction requires time-window heuristics."
+        },
+        "audiences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "authentication_context_class": {
+          "type": "string"
+        },
+        "token_expiry": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "rotation_due_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "credential_age_days": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Computed at ingest."
+        },
+        "scope_drift_detected": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "True if scopes exercised exceed scopes provisioned in IGA."
+        }
+      },
+      "additionalProperties": false
+    },
+    "resource": {
+      "type": "object",
+      "description": "The resource targeted by this event.",
+      "properties": {
+        "resource_type": {
+          "type": "string"
+        },
+        "resource_id": {
+          "type": "string"
+        },
+        "resource_name": {
+          "type": "string"
+        },
+        "locator": {
+          "type": "string"
+        },
+        "data_classification": {
+          "type": "string"
+        },
+        "resource_domain": {
+          "type": "string",
+          "enum": [
+            "identity",
+            "iam",
+            "directory",
+            "application",
+            "api",
+            "database",
+            "storage",
+            "messaging",
+            "ticketing",
+            "hr",
+            "collaboration",
+            "knowledge",
+            "secrets",
+            "network",
+            "endpoint",
+            "other",
+            "unknown"
+          ]
+        },
+        "target_service": {
+          "type": "string"
+        },
+        "target_host": {
+          "type": "string"
+        },
+        "target_audience": {
+          "type": "string"
+        },
+        "http_method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "HEAD",
+            "OPTIONS",
+            "UNKNOWN"
+          ]
+        },
+        "api_path": {
+          "type": "string",
+          "description": "Actual resolved path."
+        },
+        "api_path_template": {
+          "type": "string",
+          "description": "Parameterized template e.g. /claims/{claimId}/status."
+        },
+        "operation_name": {
+          "type": "string"
+        },
+        "resource_sensitivity": {
+          "type": "string",
+          "enum": [
+            "public",
+            "internal",
+            "confidential",
+            "restricted",
+            "regulated",
+            "unknown"
+          ]
+        },
+        "data_classification_accessed": {
+          "type": "string",
+          "enum": [
+            "public",
+            "internal",
+            "confidential",
+            "restricted",
+            "regulated",
+            "unknown"
+          ],
+          "description": "Highest classification touched in this event. Enables single-event privilege signals without an IGA join."
+        },
+        "is_first_access": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "True if first time this actor_global_id has accessed this resource_id. Computed at ingest from log history."
+        }
+      },
+      "additionalProperties": false
+    },
+    "access_context": {
+      "type": "object",
+      "description": "Access decision and action classification.",
+      "properties": {
+        "privilege_level": {
+          "type": "string"
+        },
+        "effective_roles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "entitlement_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "policy_id": {
+          "type": "string"
+        },
+        "action_category": {
+          "type": "string",
+          "enum": [
+            "authenticate",
+            "logout",
+            "token_issue",
+            "token_exchange",
+            "secret_retrieve",
+            "secret_create",
+            "secret_rotate",
+            "workload_attest",
+            "read",
+            "list",
+            "search",
+            "create",
+            "update",
+            "delete",
+            "execute",
+            "invoke",
+            "authorize",
+            "deny",
+            "approve",
+            "reject",
+            "admin_change",
+            "policy_evaluation",
+            "other",
+            "unknown"
+          ],
+          "description": "secret_retrieve, secret_create, secret_rotate added v3.0.0 to support secret_access events. workload_attest added v3.0.0 to support workload_attestation events."
+        },
+        "action_semantics": {
+          "type": "string",
+          "enum": [
+            "authentication",
+            "discovery",
+            "retrieval",
+            "mutation",
+            "execution",
+            "decision",
+            "administration",
+            "other",
+            "unknown"
+          ]
+        },
+        "access_mode": {
+          "type": "string",
+          "enum": [
+            "read",
+            "write",
+            "read_write",
+            "execute",
+            "admin",
+            "unknown"
+          ]
+        },
+        "is_sensitive_action": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "policy_decision": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "deny",
+            "step_up",
+            "challenge",
+            "not_applicable",
+            "unknown"
+          ]
+        },
+        "policy_set": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "policy_enforcement_point": {
+          "type": "string",
+          "description": "Added v3.0.0. Identity of the component that made the authz_decision (e.g. ping_authorize, opa, aws_api_gw, apigee). Populated on authz_decision events. Allows querying which PEP denied a request without parsing ingest_metadata.source_system."
+        },
+        "delegated_by_actor_id": {
+          "type": "string",
+          "description": "Single-hop delegation. Kept for backwards compatibility."
+        },
+        "delegated_actor_global_id": {
+          "type": "string",
+          "description": "IGA-resolved identity of delegated principal."
+        },
+        "requested_operation": {
+          "type": "string"
+        },
+        "privilege_change_detected": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "True if privilege level exercised differs from provisioned IGA baseline."
+        }
+      },
+      "additionalProperties": false
+    },
+    "correlation_context": {
+      "type": "object",
+      "description": "Multi-event linkage fields.",
+      "properties": {
+        "chain_id": {
+          "type": "string",
+          "description": "Added v3.0.0. End-to-end invocation chain identifier. Set at the human or service invoker hop and propagated forward through all participating systems as a convention (e.g. a custom HTTP header or token claim). Every event in the chain — platform, IdP, gateway, intermediary — that receives this identifier populates this field. Enables deterministic reconstruction of the full invoker-to-resource event sequence from flat records without time-window heuristics. Null when the source system did not carry the identifier."
+        },
+        "request_id": {
+          "type": "string"
+        },
+        "trace_id": {
+          "type": "string"
+        },
+        "span_id": {
+          "type": "string"
+        },
+        "correlation_id": {
+          "type": "string"
+        },
+        "transaction_id": {
+          "type": "string"
+        },
+        "parent_event_id": {
+          "type": "string"
+        },
+        "sequence_id": {
+          "type": "string"
+        },
+        "sequence_number": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "hop_sequence_number": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Added v3.0.0. Zero-based position of this event in the end-to-end chain scoped to chain_id. Allows ordered reconstruction of the hop sequence without timestamp sorting, which is unreliable across system clock skew. The invoker event is hop 0."
+        },
+        "session_id": {
+          "type": "string",
+          "description": "Agent session grouping key. Duplicated from auth_context for session-level aggregation without auth join."
+        },
+        "invocation_id": {
+          "type": "string",
+          "description": "Single agent invocation envelope ID. Groups tool_invocation, knowledge_base_query, and guardrail_evaluation events under one agent_invocation parent."
+        }
+      },
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "source_ip": {
+          "type": "string"
+        },
+        "source_port": {
+          "type": "string"
+        },
+        "geo": {
+          "type": "object",
+          "properties": {
+            "country": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "user_agent": {
+          "type": "string"
+        },
+        "device_id": {
+          "type": "string"
+        },
+        "device_trust_level": {
+          "type": "string"
+        },
+        "cloud_region": {
+          "type": "string"
+        },
+        "network_zone": {
+          "type": "string"
+        },
+        "device_posture": {
+          "type": "object",
+          "properties": {
+            "managed": {
+              "type": "boolean"
+            },
+            "compliant": {
+              "type": "boolean"
+            },
+            "os": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "encryption": {
+              "type": "boolean"
+            },
+            "antivirus_up_to_date": {
+              "type": "boolean"
+            },
+            "last_scan_time": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "additionalProperties": false
+        },
+        "environment_tag": {
+          "type": "string",
+          "enum": [
+            "prod",
+            "non_prod",
+            "dev",
+            "test",
+            "sandbox",
+            "unknown"
+          ]
+        },
+        "network_type": {
+          "type": "string",
+          "enum": [
+            "internal",
+            "external",
+            "vpn",
+            "private_link",
+            "unknown"
+          ]
+        },
+        "source_ip_version": {
+          "type": "string",
+          "enum": [
+            "ipv4",
+            "ipv6",
+            "unknown"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "result_context": {
+      "type": "object",
+      "properties": {
+        "response_code": {
+          "type": "string"
+        },
+        "error_code": {
+          "type": "string"
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "latency_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Added v3.0.0. End-to-end latency of this event in milliseconds as observed by the source system. Standard in gateway, service mesh, and API logs. Promoted from extensions to first-class field."
+        },
+        "bytes_in": {
+          "type": "string"
+        },
+        "bytes_out": {
+          "type": "string"
+        },
+        "risk_score": {
+          "type": "string"
+        },
+        "records_affected": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total records read or written in this event."
+        },
+        "data_classification_accessed": {
+          "type": "string",
+          "enum": [
+            "public",
+            "internal",
+            "confidential",
+            "restricted",
+            "regulated",
+            "unknown"
+          ],
+          "description": "Duplicated from resource block for result-level queries without resource join."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ingest_metadata": {
+      "type": "object",
+      "description": "Source provenance.",
+      "properties": {
+        "source_system": {
+          "type": "string",
+          "description": "Required for ingestion-valid events. Identifies the log origin (e.g. ping_federate, ping_one, aws_secrets_manager, hashicorp_vault, opa, vertex_ai, bedrock). Vendor-agnostic free string — the canonical name used here is the join key for collector-type queries."
+        },
+        "collector_id": {
+          "type": "string"
+        },
+        "collector_version": {
+          "type": "string"
+        },
+        "raw_event_hash": {
+          "type": "string"
+        },
+        "raw_event_ref": {
+          "type": "string"
+        },
+        "ingest_time": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Required for ingestion-valid events."
+        },
+        "parse_version": {
+          "type": "string"
+        },
+        "dedup_key": {
+          "type": "string"
+        },
+        "correlation_confidence": {
+          "type": "string",
+          "enum": [
+            "deterministic",
+            "heuristic",
+            "unknown"
+          ],
+          "description": "Added v3.0.0. Indicates whether this event's chain linkage (chain_id, parent_event_id) was populated from a propagated identifier (deterministic) or inferred by time-window or actor-matching heuristics (heuristic). Allows downstream consumers to qualify chain reconstruction queries by confidence level."
+        }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "createdDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modifiedDate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

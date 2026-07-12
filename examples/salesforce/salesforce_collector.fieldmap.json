@@ -1,0 +1,27 @@
+{
+  "source_system": "salesforce",
+  "event_type": "authentication",
+  "fields": {
+    "_native_actor_id": {
+      "source_path": ["USER_NAME", "USER_ID"],
+      "required": true
+    },
+    "_event_time": {
+      "source_path": "TIMESTAMP",
+      "transform": "parse_salesforce_timestamp",
+      "required": true
+    },
+    "action": {
+      "source_path": "LOGIN_TYPE",
+      "default": "Login"
+    },
+    "outcome": {
+      "source_path": "_resolved_outcome",
+      "transform": "sailpoint_result_to_outcome",
+      "default": "unknown"
+    },
+    "resource.resource_name": {
+      "literal": "Salesforce"
+    }
+  }
+}

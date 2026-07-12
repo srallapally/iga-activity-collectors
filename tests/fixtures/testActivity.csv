@@ -1,0 +1,2 @@
+event_id,event_time,event_type,action,outcome,actor_global_id
+evt-sample-1,2026-07-10T00:00:00+00:00,authentication,Login,success,00000000-0000-0000-0000-000000000001

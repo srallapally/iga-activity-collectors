@@ -1,0 +1,28 @@
+{
+  "source_system": "windows_security_eventlog",
+  "event_type": "resource_access",
+  "fields": {
+    "_native_actor_id": {
+      "source_path": ["TargetUserName", "SubjectUserName"],
+      "required": true
+    },
+    "_event_time": {
+      "source_path": "TimeCreated",
+      "transform": "parse_iso8601",
+      "required": true
+    },
+    "action": {
+      "source_path": "_resolved_action",
+      "required": true
+    },
+    "outcome": {
+      "source_path": "_resolved_result",
+      "transform": "sailpoint_result_to_outcome",
+      "default": "unknown"
+    },
+    "resource.resource_name": {
+      "source_path": "Computer",
+      "default": "unknown_resource"
+    }
+  }
+}

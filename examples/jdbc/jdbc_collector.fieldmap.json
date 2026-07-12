@@ -1,0 +1,25 @@
+{
+  "source_system": "mysql_activity_example",
+  "event_type": "resource_access",
+  "fields": {
+    "_native_actor_id": {
+      "source_path": "user",
+      "required": true
+    },
+    "_event_time": {
+      "source_path": "time",
+      "required": true
+    },
+    "action": {
+      "source_path": "action",
+      "required": true
+    },
+    "outcome": {
+      "literal": "unknown"
+    },
+    "resource.resource_name": {
+      "source_path": "target",
+      "default": "unknown_resource"
+    }
+  }
+}

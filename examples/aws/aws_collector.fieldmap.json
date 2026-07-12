@@ -1,0 +1,40 @@
+{
+  "source_system": "aws_cloudtrail",
+  "event_type": "resource_access",
+  "fields": {
+    "_native_actor_id": {
+      "source_path": "Username",
+      "required": true
+    },
+    "_event_time": {
+      "source_path": "EventTime",
+      "required": true
+    },
+    "action": {
+      "source_path": "EventName",
+      "required": true
+    },
+    "outcome": {
+      "source_path": "CloudTrailEvent.$json",
+      "transform": "error_code_presence_to_outcome",
+      "default": "unknown"
+    },
+    "resource.resource_name": {
+      "source_path": ["Resources[0].ResourceName", "EventSource"],
+      "default": "unknown_resource"
+    },
+    "environment.source_ip": {
+      "source_path": "CloudTrailEvent.$json.sourceIPAddress"
+    },
+    "environment.user_agent": {
+      "source_path": "CloudTrailEvent.$json.userAgent"
+    },
+    "auth_context.client_id": {
+      "source_path": "CloudTrailEvent.$json.userIdentity.accessKeyId"
+    },
+    "auth_context.credential_type": {
+      "source_path": "CloudTrailEvent.$json.userIdentity.accessKeyId",
+      "transform": "access_key_to_credential_type"
+    }
+  }
+}

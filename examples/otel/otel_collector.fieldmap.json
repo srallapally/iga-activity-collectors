@@ -1,0 +1,28 @@
+{
+  "source_system": "opentelemetry",
+  "event_type": "tool_invocation",
+  "fields": {
+    "_native_actor_id": {
+      "source_path": "user",
+      "required": true
+    },
+    "_event_time": {
+      "source_path": "endTimeUnixNano",
+      "transform": "unix_nanos_to_datetime",
+      "required": true
+    },
+    "action": {
+      "source_path": "action",
+      "required": true
+    },
+    "outcome": {
+      "source_path": "statusCode",
+      "transform": "otel_status_code_to_outcome",
+      "default": "unknown"
+    },
+    "resource.resource_name": {
+      "source_path": "target",
+      "default": "unknown_service"
+    }
+  }
+}

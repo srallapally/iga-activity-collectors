@@ -1,0 +1,5 @@
+{
+  "jaeger_query_base_url": "http://jaeger-query:16686",
+  "jaeger_service_name": "REPLACE_ME",
+  "jaeger_initial_lookback_seconds": 3600
+}

@@ -1,0 +1,6 @@
+{
+  "gws_service_account_key_path": "/etc/iga-collectors/secrets/google-workspace-sa.json",
+  "gws_admin_email": "REPLACE_ME@yourdomain.com",
+  "gws_application_name": "login",
+  "gws_initial_lookback_seconds": 3600
+}

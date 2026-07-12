@@ -1,0 +1,27 @@
+{
+  "source_system": "google_cloud",
+  "event_type": "resource_access",
+  "fields": {
+    "_native_actor_id": {
+      "source_path": "protoPayload.authenticationInfo.principalEmail",
+      "required": true
+    },
+    "_event_time": {
+      "source_path": "timestamp",
+      "transform": "parse_iso8601",
+      "required": true
+    },
+    "action": {
+      "source_path": "protoPayload.methodName",
+      "required": true
+    },
+    "outcome": {
+      "source_path": "protoPayload.status.code",
+      "transform": "gcp_status_code_to_outcome"
+    },
+    "resource.resource_name": {
+      "source_path": "protoPayload.resourceName",
+      "default": "unknown_resource"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# .dockerignore
+.git/
+.idea/
+.pytest_cache/
+__pycache__/
+*.pyc
+examples/
+tests/
+.env
