@@ -144,17 +144,14 @@ class EntraServicePrincipalSignInCollector(_EntraGraphCollectorBase):
     AuditLog.Read.All permission as the user sign-in stream.
 
     Uses the Graph beta endpoint — this resource is not available at v1.0.
-    Note: the beta endpoint does not support $orderby (Graph returns 400).
-    Results arrive in reverse-chronological order; the checkpoint dedup
-    filter in poll() discards anything at or before the last position."""
+    The beta endpoint does not support $filter or $orderby (both return 400).
+    All pages are fetched; client-side checkpoint dedup in poll() drops
+    anything at or before the last position. filter_by_checkpoint must be
+    True (the default) for correctness."""
 
     def poll_records(self, since_position: Optional[str]) -> Iterator[dict[str, Any]]:
-        since_dt = self._resolve_since_dt(since_position)
         url = f"{GRAPH_BETA_URL}/auditLogs/servicePrincipalSignIns"
-        params = {
-            "$filter": f"createdDateTime ge {since_dt.strftime('%Y-%m-%dT%H:%M:%SZ')}",
-            "$top": self._page_size,
-        }
+        params: dict = {"$top": self._page_size}
         yield from self._graph.get_pages(url, params)
 
 
