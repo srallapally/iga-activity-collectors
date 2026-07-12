@@ -37,11 +37,35 @@ from iga_collectors.base import CheckpointStore, PassthroughCorrelator
 from iga_collectors.field_mapping import DeclarativeMappedCollector
 
 DEFAULT_EVENT_TYPES = frozenset({
+    # User authentication
     "user.session.start",
-    "user.lifecycle.create", "user.lifecycle.deactivate",
-    "user.lifecycle.suspend", "user.lifecycle.unsuspend",
-    "user.account.lock", "user.account.privilege.grant", "user.account.privilege.revoke",
-    "group.user_membership.add", "group.user_membership.remove",
+    # User lifecycle
+    "user.lifecycle.create",
+    "user.lifecycle.activate",
+    "user.lifecycle.deactivate",
+    "user.lifecycle.suspend",
+    "user.lifecycle.unsuspend",
+    "user.lifecycle.delete",
+    # User account changes
+    "user.account.lock",
+    "user.account.privilege.grant",
+    "user.account.privilege.revoke",
+    "user.account.update_profile",
+    # Group membership
+    "group.user_membership.add",
+    "group.user_membership.remove",
+    # Application (service account / workload) lifecycle
+    "application.lifecycle.create",
+    "application.lifecycle.update",
+    "application.lifecycle.delete",
+    "application.lifecycle.activate",
+    "application.lifecycle.deactivate",
+    # OAuth2 grants and revocations (app-to-Okta authorization)
+    "app.oauth2.as.token.grant",
+    "app.oauth2.as.token.revoke",
+    # API token (service account credential) management
+    "system.api_token.create",
+    "system.api_token.revoke",
 })
 
 FIELD_MAP_PATH = Path(__file__).parent / "okta_collector.fieldmap.json"

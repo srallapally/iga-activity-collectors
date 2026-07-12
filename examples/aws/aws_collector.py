@@ -53,12 +53,33 @@ from iga_collectors.base import CheckpointStore, PassthroughCorrelator
 from iga_collectors.field_mapping import DeclarativeMappedCollector
 
 DEFAULT_EVENT_NAMES = frozenset({
-    "CreateUser", "DeleteUser",
-    "CreateAccessKey", "DeleteAccessKey",
+    # IAM user lifecycle
+    "CreateUser", "DeleteUser", "UpdateUser",
     "CreateLoginProfile", "DeleteLoginProfile", "UpdateLoginProfile",
-    "AttachUserPolicy", "DetachUserPolicy",
+    "CreateVirtualMFADevice", "DeactivateMFADevice", "EnableMFADevice",
+    # IAM user credential management
+    "CreateAccessKey", "DeleteAccessKey", "UpdateAccessKey",
+    # IAM group membership
     "AddUserToGroup", "RemoveUserFromGroup",
-    "ConsoleLogin", "AssumeRole",
+    "CreateGroup", "DeleteGroup",
+    # IAM policy attach/detach (users, roles, groups)
+    "AttachUserPolicy", "DetachUserPolicy",
+    "AttachRolePolicy", "DetachRolePolicy",
+    "AttachGroupPolicy", "DetachGroupPolicy",
+    "PutUserPolicy", "DeleteUserPolicy",
+    "PutRolePolicy", "DeleteRolePolicy",
+    # IAM role lifecycle
+    "CreateRole", "DeleteRole", "UpdateRole", "UpdateAssumeRolePolicy",
+    "CreateServiceLinkedRole", "DeleteServiceLinkedRole",
+    # Authentication and session assumption
+    "ConsoleLogin",
+    "AssumeRole", "AssumeRoleWithWebIdentity", "AssumeRoleWithSAML",
+    # Workload identity federation
+    "CreateOpenIDConnectProvider", "DeleteOpenIDConnectProvider",
+    "UpdateOpenIDConnectProviderThumbprint",
+    "AddClientIDToOpenIDConnectProvider",
+    "RemoveClientIDFromOpenIDConnectProvider",
+    "CreateSAMLProvider", "DeleteSAMLProvider", "UpdateSAMLProvider",
 })
 
 FIELD_MAP_PATH = Path(__file__).parent / "aws_collector.fieldmap.json"
