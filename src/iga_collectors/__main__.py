@@ -39,7 +39,7 @@ from iga_collectors.config import (
 )
 from iga_collectors.discovery import discover_collector_files, load_collectors, run_all, run_and_upload
 from iga_collectors.logging_setup import configure_logging
-from iga_collectors.uploader import DryRunUploader
+from iga_collectors.uploader import DryRunUploader, TokenClient, check_connectivity, build_upload_url
 
 logger = logging.getLogger("iga_collectors")
 
@@ -75,7 +75,60 @@ def main() -> int:
         default=None,
         help="Stop each collector after N events. Usable with or without --dry-run.",
     )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help=(
+            "Validate IGA credentials and upload endpoint reachability without running "
+            "any collector. Exits 0 if both checks pass, 1 otherwise."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.check:
+        configure_logging()
+        try:
+            config = load_config()
+        except ConfigError as exc:
+            logger.error("configuration error: %s", exc)
+            return 1
+        token_client = TokenClient(
+            token_url=config.iga_token_url,
+            client_id=config.iga_client_id,
+            client_secret=config.iga_client_secret,
+            scope=config.iga_oauth_scope,
+        )
+        upload_url = build_upload_url(
+            config.iga_protocol, config.iga_host, config.iga_port, config.iga_upload_path
+        )
+        result = check_connectivity(token_client, upload_url)
+
+        ok_mark = "PASS"
+        fail_mark = "FAIL"
+
+        token_line = f"[{ok_mark}]  IGA token endpoint   {config.iga_token_url}"
+        if result["token_ok"]:
+            if result["token_expires_at"]:
+                token_line += f"  (expires {result['token_expires_at']})"
+        else:
+            token_line = f"[{fail_mark}]  IGA token endpoint   {config.iga_token_url}"
+            token_line += f"\n       {result['token_error']}"
+
+        probe_url = upload_url.split("?")[0]
+        endpoint_line = f"[{ok_mark}]  IGA upload endpoint  {probe_url}"
+        if result["endpoint_ok"]:
+            if result["endpoint_status"] is not None:
+                endpoint_line += f"  (HTTP {result['endpoint_status']})"
+        else:
+            endpoint_line = f"[{fail_mark}]  IGA upload endpoint  {probe_url}"
+            if result["endpoint_error"]:
+                endpoint_line += f"\n       {result['endpoint_error']}"
+            elif result["endpoint_status"] is not None:
+                endpoint_line += f"\n       HTTP {result['endpoint_status']}"
+
+        print(token_line)
+        print(endpoint_line)
+        return 0 if (result["token_ok"] and result["endpoint_ok"]) else 1
 
     # Env var fallbacks — CLI flags take precedence when explicitly set.
     dry_run = args.dry_run or os.environ.get("DRY_RUN", "").lower() in ("1", "true", "yes")

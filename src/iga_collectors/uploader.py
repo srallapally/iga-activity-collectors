@@ -175,6 +175,73 @@ class ActivityUploader:
         return response
 
 
+def check_connectivity(
+    token_client: TokenClient,
+    upload_url: str,
+    session: Optional[requests.Session] = None,
+    timeout: int = DEFAULT_TIMEOUT_SECONDS,
+) -> dict:
+    """Probe IGA token endpoint and upload endpoint reachability.
+
+    Returns a dict with keys:
+      token_ok (bool), token_expires_at (str|None), token_error (str|None)
+      endpoint_ok (bool), endpoint_status (int|None), endpoint_error (str|None)
+
+    Never raises — all errors are captured in the return dict so the caller
+    can print a structured report and choose the exit code."""
+    result: dict = {
+        "token_ok": False, "token_expires_at": None, "token_error": None,
+        "endpoint_ok": False, "endpoint_status": None, "endpoint_error": None,
+    }
+    session = session or requests.Session()
+
+    try:
+        token = token_client.get_token()
+        result["token_ok"] = True
+        # Approximate expiry from cached state — best-effort display only.
+        import time as _time
+        from datetime import datetime, timezone as _tz
+        remaining = token_client._expires_at - _time.monotonic()
+        if remaining > 0:
+            expires_iso = datetime.fromtimestamp(
+                _time.time() + remaining, tz=_tz.utc
+            ).isoformat()
+            result["token_expires_at"] = expires_iso
+    except Exception as exc:
+        result["token_error"] = str(exc)
+        return result
+
+    # Strip query string from upload_url for the probe — we just want to
+    # reach the base path, not trigger an actual upload action.
+    probe_url = upload_url.split("?")[0]
+    try:
+        response = session.head(
+            probe_url,
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=timeout,
+            allow_redirects=True,
+        )
+        result["endpoint_status"] = response.status_code
+        # Any response — including 405 Method Not Allowed — means the
+        # server is reachable and the token was accepted for routing.
+        # 401/403 means the token was rejected by the server.
+        if response.status_code in (401, 403):
+            result["endpoint_error"] = (
+                f"HTTP {response.status_code} — token was acquired but rejected "
+                f"by the upload endpoint; check IGA_CLIENT_ID / IGA_CLIENT_SECRET scopes"
+            )
+        else:
+            result["endpoint_ok"] = True
+    except requests.exceptions.ConnectionError as exc:
+        result["endpoint_error"] = f"connection failed — {exc}"
+    except requests.exceptions.Timeout:
+        result["endpoint_error"] = f"timed out after {timeout}s"
+    except Exception as exc:
+        result["endpoint_error"] = str(exc)
+
+    return result
+
+
 class DryRunUploader:
     """Drop-in replacement for ActivityUploader used by --dry-run.
     Prints each event as pretty-printed JSON to stdout. Makes no HTTP
