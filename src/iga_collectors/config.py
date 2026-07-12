@@ -42,6 +42,8 @@ class Config:
     iga_oauth_scope: Optional[str]
     collectors_dir: Path
     checkpoint_store_path: Path
+    log_level: str
+    log_format: str
 
     @property
     def upload_url(self) -> str:
@@ -81,6 +83,8 @@ def load_config(env: Optional[Mapping[str, str]] = None) -> Config:
         iga_oauth_scope=env.get("IGA_OAUTH_SCOPE") or None,
         collectors_dir=Path(env["COLLECTORS_DIR"]),
         checkpoint_store_path=Path(env["CHECKPOINT_STORE_PATH"]),
+        log_level=env.get("LOG_LEVEL", "INFO").upper(),
+        log_format=env.get("LOG_FORMAT", "text").lower(),
     )
 
 

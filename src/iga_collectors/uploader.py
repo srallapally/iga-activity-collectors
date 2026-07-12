@@ -67,6 +67,11 @@ class TokenClient:
 
     def get_token(self) -> str:
         if self._cached_token is not None and time.monotonic() < self._expires_at:
+            from datetime import datetime, timezone
+            expires_iso = datetime.fromtimestamp(
+                time.time() + (self._expires_at - time.monotonic()), tz=timezone.utc
+            ).isoformat()
+            logger.debug("token cache hit expires_at=%s", expires_iso)
             return self._cached_token
         return self._fetch_token()
 
@@ -79,11 +84,17 @@ class TokenClient:
         if self._scope:
             data["scope"] = self._scope
 
+        logger.debug(
+            "token request POST %s grant_type=client_credentials client_id=%s scope=%s",
+            self._token_url, self._client_id, self._scope or "",
+        )
+
         response = self._session.post(self._token_url, data=data, timeout=self._timeout)
         if not response.ok:
-            # Response body may contain an error description but never the
-            # request's own client_secret (that was sent, not returned),
-            # so this is safe to surface.
+            logger.warning(
+                "token request failed status=%s url=%s",
+                response.status_code, self._token_url,
+            )
             raise TokenRequestError(
                 f"token request to {self._token_url} failed: "
                 f"{response.status_code} {response.text}"
@@ -99,9 +110,15 @@ class TokenClient:
         expires_in = body.get("expires_in")
         if isinstance(expires_in, (int, float)) and expires_in > TOKEN_EXPIRY_BUFFER_SECONDS:
             self._expires_at = time.monotonic() + expires_in - TOKEN_EXPIRY_BUFFER_SECONDS
+            from datetime import datetime, timezone
+            expires_iso = datetime.fromtimestamp(
+                time.time() + expires_in - TOKEN_EXPIRY_BUFFER_SECONDS, tz=timezone.utc
+            ).isoformat()
+            logger.info("token refreshed expires_at=%s", expires_iso)
         else:
             # Unknown or too-short lifetime: don't cache, refetch every call.
             self._expires_at = 0.0
+            logger.info("token refreshed (no caching: expires_in=%s)", expires_in)
 
         self._cached_token = access_token
         return access_token
@@ -126,6 +143,12 @@ class ActivityUploader:
         """Flatten events to CSV + mapping doc and POST them. Raises
         UploadError on a non-2xx response."""
         csv_text, mapping_doc = build_upload_payload(events)
+        csv_bytes = len(csv_text.encode())
+
+        logger.debug(
+            "upload POST %s events=%d csv_bytes=%d",
+            self._upload_url, len(events), csv_bytes,
+        )
 
         token = self._token_client.get_token()
         response = self._session.post(
@@ -136,8 +159,17 @@ class ActivityUploader:
             timeout=self._timeout,
         )
         if not response.ok:
+            body_excerpt = response.text[:500]
+            logger.error(
+                "upload failed status=%s url=%s response=%r",
+                response.status_code, self._upload_url, body_excerpt,
+            )
             raise UploadError(
                 f"upload to {self._upload_url} failed: "
                 f"{response.status_code} {response.text}"
             )
+
+        logger.info(
+            "upload accepted status=%s events=%d", response.status_code, len(events)
+        )
         return response

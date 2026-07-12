@@ -398,19 +398,29 @@ class DeclarativeMappedCollector(BaseCollector):
             if since_position and self._filter_by_checkpoint
             else None
         )
+        yielded = 0
         for record in self.poll_records(since_position):
             activity = self._record_to_activity(record)
             if activity is None:
                 continue
             if since_dt is not None and activity.event_time <= since_dt:
                 continue
+            yielded += 1
             yield activity
+        logger.debug(
+            "poll complete collector=%s records_yielded=%d since=%s",
+            self.collector_id, yielded, since_position or "beginning",
+        )
 
     def _record_to_activity(self, record: dict[str, Any]) -> Optional[RawActivity]:
         resolved: dict[str, Any] = {}
         for path, spec in self._fields.items():
             value = _resolve_field(record, spec)
             if value is None and spec.get("required"):
+                logger.debug(
+                    "record dropped required field missing collector=%s field=%s",
+                    self.collector_id, path,
+                )
                 return None
             resolved[path] = value
 
