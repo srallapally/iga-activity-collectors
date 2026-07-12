@@ -44,6 +44,7 @@ from iga_collectors.field_mapping import DeclarativeMappedCollector
 from iga_collectors.uploader import TokenClient
 
 GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0"
+GRAPH_BETA_URL = "https://graph.microsoft.com/beta"
 
 FIELD_MAP_PATH = Path(__file__).parent / "entra_collector.fieldmap.json"
 SIGNIN_FIELD_MAP_PATH = Path(__file__).parent / "entra_collector.signin.fieldmap.json"
@@ -142,13 +143,14 @@ class EntraServicePrincipalSignInCollector(_EntraGraphCollectorBase):
     and certificate-authenticated app sign-ins. Requires the same
     AuditLog.Read.All permission as the user sign-in stream.
 
-    Note: this endpoint does not support $orderby (Graph returns 400).
+    Uses the Graph beta endpoint — this resource is not available at v1.0.
+    Note: the beta endpoint does not support $orderby (Graph returns 400).
     Results arrive in reverse-chronological order; the checkpoint dedup
     filter in poll() discards anything at or before the last position."""
 
     def poll_records(self, since_position: Optional[str]) -> Iterator[dict[str, Any]]:
         since_dt = self._resolve_since_dt(since_position)
-        url = f"{GRAPH_BASE_URL}/auditLogs/servicePrincipalSignIns"
+        url = f"{GRAPH_BETA_URL}/auditLogs/servicePrincipalSignIns"
         params = {
             "$filter": f"createdDateTime ge {since_dt.strftime('%Y-%m-%dT%H:%M:%SZ')}",
             "$top": self._page_size,
