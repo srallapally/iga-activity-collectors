@@ -51,4 +51,7 @@ RUN pip install --no-cache-dir ".[jdbc,kafka,google,aws]"
 # and point your jdbc_collector.py config's jdbc_driver_jars at it:
 #   -v /host/path/to/jdbc-drivers:/jdbc-drivers
 
+ENV COLLECTORS_DIR=/collectors
+ENV CHECKPOINT_STORE_PATH=/state/checkpoint.json
+
 ENTRYPOINT ["iga-collectors"]
