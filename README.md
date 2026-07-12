@@ -121,6 +121,36 @@ COLLECTORS_DIR/
 
 All example `.json` configs ship with `"enabled": false`. A collector that has no `.json` config, or whose config omits `"enabled"`, is treated as enabled.
 
+### Test mode (dry run)
+
+`--dry-run` runs the full pipeline (poll → correlate → map) but prints events to stdout as JSON instead of uploading. **IGA credentials are not required.** Checkpoint state is never read or written — the collector always starts from its `initial_lookback_seconds` default.
+
+Use `--limit N` to cap output to the first N events per collector:
+
+```bash
+# Test one collector — print first 5 events, no IGA creds needed
+COLLECTORS_DIR=/path/to/collectors \
+  iga-collectors --dry-run --limit 5 --collector okta_collector
+
+# Dry run all enabled collectors, 10 events each
+COLLECTORS_DIR=/path/to/collectors iga-collectors --dry-run --limit 10
+```
+
+`--limit` is also usable on live runs to cap how many events are uploaded per collector:
+
+```bash
+iga-collectors --limit 100 --collector entra_collector
+```
+
+**What dry-run tests vs. what it doesn't:**
+
+| Tested | Not tested |
+|---|---|
+| Source credentials (API key, token) | IGA upload endpoint reachability |
+| API pagination | OAuth2 client credentials to IGA |
+| Field mapping (`fieldmap.json` correctness) | Mapping doc format accepted by IGA |
+| Identity correlation | Checkpoint write-back |
+
 ### Docker (one-shot)
 
 ```bash
