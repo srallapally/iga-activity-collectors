@@ -34,7 +34,7 @@ import requests
 from iga_collectors.base import CheckpointStore, PassthroughCorrelator
 from iga_collectors.field_mapping import DeclarativeMappedCollector
 
-FIELD_MAP_PATH = Path(__file__).parent / "acme_directory_collector.fieldmap.json"
+FIELD_MAP_PATH = Path(__file__).parent / "acme_directory.fieldmap.json"
 
 
 class AcmeDirectoryCollector(DeclarativeMappedCollector):
