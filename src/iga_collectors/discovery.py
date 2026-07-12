@@ -59,7 +59,7 @@ from types import ModuleType
 from typing import Any, Callable, Iterable, Optional
 
 from iga_collectors.base import BaseCollector
-from iga_collectors.uploader import ActivityUploader
+from iga_collectors.uploader import ActivityUploader, DryRunUploader
 
 logger = logging.getLogger(__name__)
 
@@ -152,16 +152,20 @@ def load_collector_factory(path: Path) -> Callable[[dict[str, Any]], BaseCollect
 
 def load_collectors(
     directory: Path, base_config: dict[str, Any]
-) -> tuple[dict[str, BaseCollector], int]:
+) -> tuple[dict[str, BaseCollector], dict[str, dict[str, Any]], int]:
     """
     Import every collector file in directory and instantiate it via its
     create_collector(config), where config is base_config merged with
     that collector's own sibling {stem}.json (see _load_collector_config).
-    Returns ({file_stem: BaseCollector}, skipped_count) where skipped_count
-    is the number of collectors that were disabled in their config.
-    Load failures are logged and excluded from both values.
+    Returns:
+      ({file_stem: BaseCollector}, {file_stem: merged_config}, skipped_count)
+    The configs dict lets callers read per-collector flags (dry_run,
+    log_level) without re-reading files. skipped_count is the number of
+    collectors with "enabled": false. Load failures are logged and excluded
+    from all three values.
     """
     collectors: dict[str, BaseCollector] = {}
+    configs: dict[str, dict[str, Any]] = {}
     skipped = 0
     for path in discover_collector_files(directory):
         try:
@@ -187,8 +191,9 @@ def load_collectors(
             continue
 
         collectors[path.stem] = collector
+        configs[path.stem] = config
 
-    return collectors, skipped
+    return collectors, configs, skipped
 
 
 def _batched(
@@ -242,10 +247,24 @@ def run_all(
     limit: stop each collector after this many events (None = no limit).
     """
     summary = RunSummary()
-    collectors, summary.skipped = load_collectors(directory, base_config)
+    collectors, configs, summary.skipped = load_collectors(directory, base_config)
     for name, collector in collectors.items():
+        cfg = configs[name]
+
+        # Per-collector log level — overrides process level for this run only.
+        if cfg.get("log_level"):
+            collector.log_level = str(cfg["log_level"]).upper()
+
+        # Per-collector dry_run — substitute DryRunUploader for this run.
+        effective_uploader = uploader
+        if cfg.get("dry_run"):
+            logger.info("collector %s: dry_run=true, skipping upload", name)
+            effective_uploader = DryRunUploader()
+
         try:
-            summary.results[name] = run_and_upload(collector, uploader, batch_size, limit)
+            summary.results[name] = run_and_upload(
+                collector, effective_uploader, batch_size, limit
+            )
         except Exception:
             logger.exception("collector %s failed during run/upload", name)
             summary.failed.add(name)
