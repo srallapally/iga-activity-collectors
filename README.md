@@ -82,6 +82,20 @@ Prints the name of each collector found in `COLLECTORS_DIR` without requiring IG
 COLLECTORS_DIR=/path/to/collectors iga-collectors --list
 ```
 
+### Run a specific collector
+
+Runs a single named collector instead of the full fleet:
+
+```bash
+iga-collectors --collector okta_collector
+```
+
+If the name is not found, the error message includes a hint to use `--list`:
+
+```
+ERROR: no collector named 'okta_collector' in /path/to/collectors — use --list to see available collectors
+```
+
 ### Docker (one-shot)
 
 ```bash
