@@ -5,9 +5,9 @@
     "_native_actor_id": {
       "source_path": [
         "initiatedBy.user.id",
-        "initiatedBy.servicePrincipal.id"
+        "initiatedBy.app.servicePrincipalId"
       ],
-      "required": true
+      "default": "system"
     },
     "_event_time": {
       "source_path": "activityDateTime",
