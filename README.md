@@ -200,6 +200,68 @@ docker run --rm --env-file .env \
 
 `COLLECTORS_DIR=/collectors` and `CHECKPOINT_STORE_PATH=/state/checkpoint.json` are baked into the image — only override them if you mount to different paths.
 
+#### Example: per-collector dry run with event output
+
+The run below has `azure_collector.json` and `entra_collector.json` both set to `"enabled": true, "dry_run": true`. All other collectors are disabled. Events are printed to stdout; nothing is uploaded to IGA.
+
+```
+$ docker run --rm --env-file ../.env \
+    -v /path/to/examples:/collectors \
+    -v /path/to/state:/state \
+    iga-collectors
+
+--- DRY RUN: events printed to stdout, nothing uploaded ---
+--- limit: 5 event(s) per collector ---
+INFO  skipping acme_directory_collector.py: disabled in config
+INFO  skipping ad_collector.py: disabled in config
+INFO  skipping aws_collector.py: disabled in config
+...
+INFO  collector azure_collector: dry_run=true, skipping upload
+INFO  collector starting collector=azure_activity_log since=beginning
+INFO  token refreshed expires_at=2026-07-12T19:33:16+00:00
+INFO  collector complete collector=azure_activity_log events=0 duration_s=1.4
+INFO  collector entra_collector: dry_run=true, skipping upload
+INFO  collector starting collector=entra_directory_audits since=beginning
+INFO  token refreshed expires_at=2026-07-12T19:33:18+00:00
+WARNING  PassthroughCorrelator used for source_system=entra_id native_id=user@example.com
+{
+  "id": "bd4d0414-8d2f-4fe0-99cf-3265b0e9f9e0",
+  "schema_version": "3.0.0",
+  "actor_global_id": "user@example.com",
+  "event_id": "bd4d0414-8d2f-4fe0-99cf-3265b0e9f9e0",
+  "event_time": "2026-07-12T18:17:14.696680+00:00",
+  "event_type": "resource_access",
+  "action": "Validate user authentication",
+  "outcome": "success",
+  "ingest_metadata": {
+    "source_system": "entra_id",
+    "ingest_time": "2026-07-12T18:33:49+00:00"
+  },
+  "resource": {
+    "resource_name": "00000000-0000-0000-0000-000000000000"
+  }
+}
+{
+  "id": "607d0a4d-7510-43f3-9bc1-413079e242f0",
+  "schema_version": "3.0.0",
+  "actor_global_id": "user@example.com",
+  "event_id": "607d0a4d-7510-43f3-9bc1-413079e242f0",
+  "event_time": "2026-07-12T18:18:21.661948+00:00",
+  "event_type": "resource_access",
+  "action": "Update service principal",
+  "outcome": "success",
+  "ingest_metadata": {
+    "source_system": "entra_id",
+    "ingest_time": "2026-07-12T18:33:49+00:00"
+  },
+  "resource": {
+    "resource_name": "Ping Client"
+  }
+}
+```
+
+The `PassthroughCorrelator` warning is expected during testing — `actor_global_id` will be the native identity (email) rather than an IGA UUID until a real correlator is wired up.
+
 ### Scheduling
 
 The process is one-shot by design — it runs once and exits. Use an external scheduler:
